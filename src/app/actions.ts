@@ -14,6 +14,7 @@ export async function saveScreening(
     hasNotebook?: boolean;
     availableLaunch?: boolean;
     trainingGroups?: number[];
+    visitAvailable?: boolean;
     consultDate?: string | null; // "YYYY-MM-DD"
     iindustryReg?: boolean;
     notes?: string | null;
@@ -27,6 +28,7 @@ export async function saveScreening(
         ...(data.hasNotebook !== undefined && { hasNotebook: data.hasNotebook }),
         ...(data.availableLaunch !== undefined && { availableLaunch: data.availableLaunch }),
         ...(data.trainingGroups !== undefined && { trainingGroups: data.trainingGroups }),
+        ...(data.visitAvailable !== undefined && { visitAvailable: data.visitAvailable }),
         ...(data.consultDate !== undefined && {
           consultDate: data.consultDate ? new Date(data.consultDate) : null,
         }),
@@ -76,7 +78,7 @@ export async function bookSlot(
     const missing: string[] = [];
     if (!candidate.hasNotebook) missing.push("มี notebook");
     if (!candidate.availableLaunch) missing.push("เข้าร่วมพิธีเปิด 11 มิ.ย.");
-    if (!candidate.consultDate) missing.push("เลือกวันนัด visit กิจการ");
+    if (!candidate.visitAvailable) missing.push("สะดวกให้นัด visit กิจการ");
     if (candidate.trainingGroups.length === 0) missing.push("เลือกกลุ่มอบรม");
     if (missing.length > 0)
       return { ok: false, error: `ต้องติ๊กให้ครบก่อนจองช่อง: ${missing.join(", ")}` };

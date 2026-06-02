@@ -399,6 +399,7 @@ function Row({
             ok={c.trainingGroups.length > 0}
             label={c.trainingGroups.length ? `กลุ่ม${c.trainingGroups.join(",")}` : "กลุ่ม"}
           />
+          <MiniCheck ok={c.visitAvailable} label="visit" />
           <MiniCheck ok={c.iindustryReg} label="i-industry" />
         </div>
       </td>

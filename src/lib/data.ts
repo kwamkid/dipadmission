@@ -43,6 +43,7 @@ export async function getScreeningData(): Promise<{
       hasNotebook: c.hasNotebook,
       availableLaunch: c.availableLaunch,
       trainingGroups: c.trainingGroups,
+      visitAvailable: c.visitAvailable,
       consultDate: toIsoDate(c.consultDate),
       iindustryReg: c.iindustryReg,
       interviewSlotId: c.interviewSlotId,

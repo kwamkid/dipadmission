@@ -31,7 +31,8 @@ model Candidate {
   hasNotebook     Boolean       @default(false) // (จำเป็น) มี notebook สำหรับเข้าอบรม
   availableLaunch Boolean       @default(false) // ว่างมาพิธีเปิด 11 มิ.ย. 09:00 (Zoom 2 ชม.)
   trainingGroups  Int[]         @default([]) // กลุ่มเทรนนิ่งที่เข้าได้: 1 = ทุกพุธ, 2 = ทุกจันทร์ (เลือกได้หลายกลุ่ม)
-  consultDate     DateTime?     @db.Date // Personal Consult on-site 12-22 มิ.ย. (เลือก 1 วัน)
+  visitAvailable  Boolean       @default(false) // สะดวกให้นัด visit กิจการครั้งแรก (12-23 มิ.ย.) — ค่อยนัดวันจริงทีหลัง
+  consultDate     DateTime?     @db.Date // วันนัด visit จริง (กำหนดทีหลัง)
   iindustryReg    Boolean       @default(false) // ลงทะเบียน i-industry ก่อน 23 มิ.ย.
 
   // ----- การจองช่องสัมภาษณ์ -----

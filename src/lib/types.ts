@@ -33,7 +33,8 @@ export interface CandidateDTO {
   hasNotebook: boolean;
   availableLaunch: boolean;
   trainingGroups: number[];
-  consultDate: string | null; // "2026-06-12"
+  visitAvailable: boolean; // สะดวกให้นัด visit (ยังไม่กำหนดวัน)
+  consultDate: string | null; // "2026-06-12" — วันนัดจริง (ทีหลัง)
   iindustryReg: boolean;
 
   interviewSlotId: string | null;
@@ -50,7 +51,7 @@ export function canBookSlot(c: CandidateDTO): boolean {
   return (
     c.hasNotebook &&
     c.availableLaunch &&
-    c.consultDate !== null &&
+    c.visitAvailable &&
     c.trainingGroups.length > 0
   );
 }
@@ -60,7 +61,7 @@ export function missingForBooking(c: CandidateDTO): string[] {
   const m: string[] = [];
   if (!c.hasNotebook) m.push("มี notebook");
   if (!c.availableLaunch) m.push("เข้าร่วมพิธีเปิด 11 มิ.ย.");
-  if (c.consultDate === null) m.push("เลือกวันนัด visit กิจการ");
+  if (!c.visitAvailable) m.push("สะดวกให้นัด visit กิจการ");
   if (c.trainingGroups.length === 0) m.push("เลือกกลุ่มอบรม");
   return m;
 }
