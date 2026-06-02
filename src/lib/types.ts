@@ -41,6 +41,7 @@ export interface CandidateDTO {
   interviewSlotLabel: string | null; // "บ.#1 · 4 มิ.ย. 09:00-09:15"
 
   result: Result;
+  failReason: string | null;
   round2Result: Result;
   notes: string | null;
 }

@@ -17,6 +17,7 @@ export async function saveScreening(
     visitAvailable?: boolean;
     consultDate?: string | null; // "YYYY-MM-DD"
     iindustryReg?: boolean;
+    failReason?: string | null;
     notes?: string | null;
   }
 ): Promise<ActionResult> {
@@ -118,7 +119,14 @@ export async function setResult(id: string, result: Result): Promise<ActionResul
       if (!c.hasNotebook)
         return { ok: false, error: "ผ่านไม่ได้: ผู้สมัครต้องมี notebook (จำเป็น)" };
     }
-    await prisma.candidate.update({ where: { id }, data: { result } });
+    await prisma.candidate.update({
+      where: { id },
+      data: {
+        result,
+        // ตัดสินผล (ผ่าน/ไม่ผ่าน) = ต้องคุยแล้ว → ตั้งสถานะเป็น "ติดต่อได้" ให้อัตโนมัติ
+        ...(result !== "PENDING" && { contactStatus: "CONTACTED" }),
+      },
+    });
     revalidatePath("/screening");
     return { ok: true };
   } catch (e) {

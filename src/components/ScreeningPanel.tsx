@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import type { CandidateDTO, SlotDTO } from "@/lib/types";
 import { checklistComplete, canBookSlot, missingForBooking } from "@/lib/types";
 import { INTERVIEW_DAYS, TRAINING_GROUPS } from "@/lib/slots";
-import { thaiDateShort } from "@/lib/format";
+import { slotLabelLines } from "@/lib/format";
 import { saveScreening, bookSlot, setResult } from "@/app/actions";
 
 export default function ScreeningPanel({
@@ -28,22 +28,37 @@ export default function ScreeningPanel({
   const [over, setOver] = useState<Partial<CandidateDTO>>({});
   const c = { ...candidate, ...over };
   const [notes, setNotes] = useState(candidate.notes ?? "");
-  const [busy, setBusy] = useState(false);
+  const [failReason, setFailReason] = useState(candidate.failReason ?? "");
   const [, startTransition] = useTransition();
 
   // sync เมื่อสลับไปคนใหม่ (ล้าง optimistic overlay)
   useEffect(() => {
     setOver({});
     setNotes(candidate.notes ?? "");
+    setFailReason(candidate.failReason ?? "");
   }, [candidate.id]);
 
-  // booking/result — กดทีละครั้ง รอ server จริง (อาจ error เช่นช่องถูกจอง/ผ่านไม่ได้)
-  async function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
-    setBusy(true);
-    const res = await fn();
-    setBusy(false);
-    if (!res.ok) alert(res.error ?? "เกิดข้อผิดพลาด");
-    onChanged();
+  // จองช่องสัมภาษณ์ — optimistic (revert ถ้า server ปฏิเสธ เช่น ช่องถูกจองแล้ว/ติ๊กไม่ครบ)
+  function book(slotId: string) {
+    const target = c.interviewSlotId === slotId ? null : slotId; // กดช่องเดิมซ้ำ = ยกเลิกจอง
+    const slot = target ? slots.find((s) => s.id === target) : null;
+    const label = slot
+      ? slotLabelLines(slot.label, slot.day, slot.startTime, slot.endTime)
+      : null;
+    setOver((o) => ({ ...o, interviewSlotId: target, interviewSlotLabel: label }));
+    startTransition(async () => {
+      const res = await bookSlot(candidate.id, target);
+      if (!res.ok) {
+        alert(res.error ?? "จองไม่สำเร็จ");
+        setOver((o) => {
+          const n = { ...o };
+          delete n.interviewSlotId;
+          delete n.interviewSlotLabel;
+          return n;
+        });
+      }
+      onChanged();
+    });
   }
 
   // checklist toggles — optimistic: อัปเดต UI ทันที แล้วบันทึกเบื้องหลัง
@@ -63,9 +78,13 @@ export default function ScreeningPanel({
     });
   }
 
-  // ตัดสินผล — optimistic เช่นกัน (revert ถ้า server ปฏิเสธ เช่น PASS แต่ไม่มี notebook)
+  // ตัดสินผล — optimistic (ตัดสินผ่าน/ไม่ผ่าน = ติดต่อแล้ว → ตั้งสถานะ "ติดต่อได้" ด้วย)
   function decide(result: CandidateDTO["result"]) {
-    setOver((o) => ({ ...o, result }));
+    setOver((o) => ({
+      ...o,
+      result,
+      ...(result !== "PENDING" && { contactStatus: "CONTACTED" as const }),
+    }));
     startTransition(async () => {
       const res = await setResult(candidate.id, result);
       if (!res.ok) {
@@ -73,6 +92,7 @@ export default function ScreeningPanel({
         setOver((o) => {
           const n = { ...o };
           delete n.result;
+          delete n.contactStatus;
           return n;
         });
       }
@@ -194,7 +214,6 @@ export default function ScreeningPanel({
               {(["CONTACTED", "UNREACHABLE", "PENDING"] as const).map((s) => (
                 <button
                   key={s}
-                  disabled={busy}
                   onClick={() => save({ contactStatus: s })}
                   className={`flex-1 rounded-lg border px-2 py-1.5 text-xs font-medium ${
                     c.contactStatus === s
@@ -221,7 +240,6 @@ export default function ScreeningPanel({
           <ToggleCard
             required
             checked={c.hasNotebook}
-            disabled={busy}
             onToggle={() => save({ hasNotebook: !c.hasNotebook })}
             title="มี notebook สำหรับเข้าอบรม"
             hint="จำเป็น — ถ้าไม่มี จะจองช่องสัมภาษณ์และให้ผ่านไม่ได้"
@@ -230,7 +248,6 @@ export default function ScreeningPanel({
           {/* 3. พิธีเปิด 11 มิ.ย. */}
           <ToggleCard
             checked={c.availableLaunch}
-            disabled={busy}
             onToggle={() => save({ availableLaunch: !c.availableLaunch })}
             title="ว่างมาร่วมพิธีเปิดตัวโครงการ"
             hint="11 มิ.ย. 09:00 · Zoom 2 ชม."
@@ -247,7 +264,6 @@ export default function ScreeningPanel({
                 return (
                   <button
                     key={g}
-                    disabled={busy}
                     onClick={() =>
                       save({
                         trainingGroups: on
@@ -279,7 +295,6 @@ export default function ScreeningPanel({
           {/* 5. นัด visit (แค่ติ๊กว่าสะดวก) + i-industry */}
           <ToggleCard
             checked={c.visitAvailable}
-            disabled={busy}
             onToggle={() => save({ visitAvailable: !c.visitAvailable })}
             title="สะดวกให้นัด visit กิจการครั้งแรก"
             hint="ช่วง 12–23 มิ.ย. (ยังไม่ต้องเลือกวัน ค่อยนัดวันจริงทีหลัง)"
@@ -290,7 +305,6 @@ export default function ScreeningPanel({
               <input
                 type="checkbox"
                 checked={c.iindustryReg}
-                disabled={busy}
                 onChange={() => save({ iindustryReg: !c.iindustryReg })}
                 className="h-4 w-4 accent-blue-600"
               />
@@ -311,10 +325,7 @@ export default function ScreeningPanel({
             slots={slots}
             currentId={c.interviewSlotId}
             canBook={canBookSlot(c)}
-            disabled={busy}
-            onPick={(slotId) =>
-              run(() => bookSlot(c.id, c.interviewSlotId === slotId ? null : slotId))
-            }
+            onPick={(slotId) => book(slotId)}
           />
 
           {/* notes */}
@@ -337,6 +348,19 @@ export default function ScreeningPanel({
             </span>
             <span className="text-slate-500">{c.interviewSlotLabel ?? "ยังไม่จองช่อง"}</span>
           </div>
+
+          {/* เหตุผลที่ไม่ผ่าน — โผล่เมื่อเลือก "ไม่ผ่าน" */}
+          {c.result === "FAIL" && (
+            <textarea
+              value={failReason}
+              onChange={(e) => setFailReason(e.target.value)}
+              onBlur={() => failReason !== (c.failReason ?? "") && save({ failReason })}
+              rows={2}
+              placeholder="เหตุผลที่ไม่ผ่าน… (เช่น ไม่มี notebook / ธุรกิจไม่ตรงเงื่อนไข / ไม่สะดวกเวลาอบรม)"
+              className="mb-2 w-full rounded-lg border border-red-300 bg-red-50/50 p-2.5 text-sm outline-none focus:border-red-500"
+            />
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={() => decide(c.result === "PASS" ? "PENDING" : "PASS")}
@@ -419,13 +443,11 @@ function SlotGrid({
   slots,
   currentId,
   canBook,
-  disabled,
   onPick,
 }: {
   slots: SlotDTO[];
   currentId: string | null;
   canBook: boolean;
-  disabled: boolean;
   onPick: (slotId: string) => void;
 }) {
   return (
@@ -442,7 +464,7 @@ function SlotGrid({
                 return (
                   <button
                     key={s.id}
-                    disabled={disabled || (!isMine && (takenByOther || !canBook))}
+                    disabled={!isMine && (takenByOther || !canBook)}
                     onClick={() => onPick(s.id)}
                     className={`rounded-md border px-1.5 py-1 text-[11px] leading-tight ${
                       isMine

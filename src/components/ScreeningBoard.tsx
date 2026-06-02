@@ -94,7 +94,12 @@ export default function ScreeningBoard({
   }
 
   function quickResult(id: string, r: Result) {
-    patch(id, { result: r }, () => setResult(id, r));
+    // ตัดสินผ่าน/ไม่ผ่าน = ติดต่อแล้ว → ตั้งสถานะ "ติดต่อได้" ด้วย
+    patch(
+      id,
+      { result: r, ...(r !== "PENDING" && { contactStatus: "CONTACTED" as const }) },
+      () => setResult(id, r)
+    );
   }
 
   function quickUnreachable(c: CandidateDTO) {
@@ -300,7 +305,7 @@ function ChannelBadge({ name, href }: { name: string; href?: string | null }) {
     Web: "bg-slate-200 text-slate-700",
     LINE: "bg-green-100 text-green-700",
   };
-  const cls = `rounded px-2 py-0.5 text-sm font-medium ${colors[name] ?? "bg-slate-100 text-slate-600"}`;
+  const cls = `whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${colors[name] ?? "bg-slate-100 text-slate-600"}`;
   if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={`${cls} hover:underline`} title={href}>
@@ -322,7 +327,7 @@ function channelHref(name: string, c: CandidateDTO): string | null {
 function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-sm ${
+      className={`inline-flex items-center gap-0.5 whitespace-nowrap rounded px-1.5 py-0.5 text-xs ${
         ok ? "bg-green-50 text-green-700" : "bg-slate-100 text-slate-400"
       }`}
       title={label}
@@ -426,7 +431,7 @@ function Row({
       </td>
       <td className="px-3 py-2.5">
         {c.interviewSlotLabel ? (
-          <span className="whitespace-nowrap rounded-md bg-violet-50 px-2 py-1 text-sm font-medium text-violet-700">
+          <span className="inline-block whitespace-pre-line rounded-md bg-violet-50 px-2 py-1 text-xs font-medium leading-tight text-violet-700">
             {c.interviewSlotLabel}
           </span>
         ) : (

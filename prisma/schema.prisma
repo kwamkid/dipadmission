@@ -40,8 +40,9 @@ model Candidate {
   interviewSlot   InterviewSlot? @relation(fields: [interviewSlotId], references: [id], onDelete: SetNull)
 
   // ----- ผลคัด -----
-  result       Result @default(PENDING) // ผลคัด Round 1
-  round2Result Result @default(PENDING) // ผลคัด Round 2 (zoom) — ทำต่อภายหลัง
+  result       Result  @default(PENDING) // ผลคัด Round 1
+  failReason   String? // เหตุผลที่ "ไม่ผ่าน" (กรอกตอนกดไม่ผ่าน)
+  round2Result Result  @default(PENDING) // ผลคัด Round 2 (zoom) — ทำต่อภายหลัง
   notes        String?
 
   createdAt DateTime @default(now())

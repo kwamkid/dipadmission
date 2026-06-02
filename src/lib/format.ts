@@ -9,6 +9,20 @@ export function thaiDateShort(isoDate: string): string {
   return `${d} ${TH_MONTHS_SHORT[m - 1]}`;
 }
 
+const TH_WEEKDAYS_SHORT = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+
+/** "2026-06-04" → "พฤ" */
+export function thaiWeekdayShort(isoDate: string): string {
+  const day = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+  return TH_WEEKDAYS_SHORT[day];
+}
+
+/** ป้ายช่องสัมภาษณ์แบบ 3 บรรทัด: "คิวที่ N" / "พฤ 4 มิ.ย." / "09:15-09:30" */
+export function slotLabelLines(label: string, isoDate: string, start: string, end: string): string {
+  const queue = label.replace("บ.#", "คิวที่ ");
+  return `${queue}\n${thaiWeekdayShort(isoDate)} ${thaiDateShort(isoDate)}\n${start}-${end}`;
+}
+
 /** แปลง Date เป็น "YYYY-MM-DD" (อิง UTC เพราะคอลัมน์เป็น @db.Date) */
 export function toIsoDate(d: Date | null): string | null {
   if (!d) return null;

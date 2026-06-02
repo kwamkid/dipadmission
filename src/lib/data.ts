@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "./prisma";
-import { toIsoDate, thaiDateShort } from "./format";
+import { toIsoDate, slotLabelLines } from "./format";
 import type { CandidateDTO, SlotDTO, ContactStatus, Result } from "./types";
 
 export async function getScreeningData(): Promise<{
@@ -22,7 +22,12 @@ export async function getScreeningData(): Promise<{
     let interviewSlotLabel: string | null = null;
     if (c.interviewSlot) {
       const iso = toIsoDate(c.interviewSlot.day)!;
-      interviewSlotLabel = `${c.interviewSlot.label} · ${thaiDateShort(iso)} ${c.interviewSlot.startTime}-${c.interviewSlot.endTime}`;
+      interviewSlotLabel = slotLabelLines(
+        c.interviewSlot.label,
+        iso,
+        c.interviewSlot.startTime,
+        c.interviewSlot.endTime
+      );
     }
     return {
       id: c.id,
@@ -49,6 +54,7 @@ export async function getScreeningData(): Promise<{
       interviewSlotId: c.interviewSlotId,
       interviewSlotLabel,
       result: c.result as Result,
+      failReason: c.failReason,
       round2Result: c.round2Result as Result,
       notes: c.notes,
     };
