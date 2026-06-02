@@ -199,7 +199,7 @@ export default function InterviewPanel({
                   <span className="text-base text-slate-700">{g.label}</span>
                   <div className="flex shrink-0 gap-1">
                     <button
-                      onClick={() => save({ [g.key]: true })}
+                      onClick={() => save({ [g.key]: v === true ? null : true })}
                       className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                         v === true ? "bg-green-600 text-white" : "border border-slate-300 text-slate-500"
                       }`}
@@ -207,7 +207,7 @@ export default function InterviewPanel({
                       ได้
                     </button>
                     <button
-                      onClick={() => save({ [g.key]: false })}
+                      onClick={() => save({ [g.key]: v === false ? null : false })}
                       className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                         v === false ? "bg-red-600 text-white" : "border border-slate-300 text-slate-500"
                       }`}
@@ -240,7 +240,7 @@ export default function InterviewPanel({
                       return (
                         <button
                           key={n}
-                          onClick={() => save({ [cr.key]: n })}
+                          onClick={() => save({ [cr.key]: v === n ? null : n })}
                           className={`flex w-full items-start gap-2.5 rounded-lg border p-2.5 text-left ${
                             on ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
                           }`}
