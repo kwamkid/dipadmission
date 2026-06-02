@@ -28,6 +28,8 @@ export default function ScreeningBoard({
   const [live, setLive] = useState(true);
   // optimistic overlay สำหรับ quick actions ในตาราง (ผ่าน/ไม่ผ่าน/ติดต่อ) — กดแล้วเห็นผลทันที
   const [over, setOver] = useState<Record<string, Partial<CandidateDTO>>>({});
+  // modal กรอกเหตุผลตอนกด "ไม่ผ่าน" ในตาราง
+  const [failModal, setFailModal] = useState<{ id: string; name: string; reason: string } | null>(null);
 
   // realtime sync — ดึงข้อมูลล่าสุดทุก 5 วิ ให้ทุกเครื่องเห็นตรงกัน
   const liveRef = useRef(live);
@@ -102,24 +104,25 @@ export default function ScreeningBoard({
     );
   }
 
-  // กด "ไม่ผ่าน" ในตาราง → ถามเหตุผลก่อน (กดซ้ำตอนเป็น FAIL = ยกเลิก)
+  // กด "ไม่ผ่าน" ในตาราง → เปิด modal กรอกเหตุผล (กดซ้ำตอนเป็น FAIL = ยกเลิก)
   function quickFail(c: CandidateDTO) {
     if (c.result === "FAIL") {
       quickResult(c.id, "PENDING");
       return;
     }
-    const reason = window.prompt("เหตุผลที่ไม่ผ่าน (เว้นว่างได้):", c.failReason ?? "");
-    if (reason === null) return; // กดยกเลิก = ไม่ทำอะไร
+    setFailModal({ id: c.id, name: c.name, reason: c.failReason ?? "" });
+  }
+
+  function confirmFail() {
+    if (!failModal) return;
+    const { id, reason } = failModal;
     const failReason = reason.trim() || null;
-    patch(
-      c.id,
-      { result: "FAIL", contactStatus: "CONTACTED", failReason },
-      async () => {
-        const r1 = await setResult(c.id, "FAIL");
-        if (!r1.ok) return r1;
-        return saveScreening(c.id, { failReason });
-      }
-    );
+    setFailModal(null);
+    patch(id, { result: "FAIL", contactStatus: "CONTACTED", failReason }, async () => {
+      const r1 = await setResult(id, "FAIL");
+      if (!r1.ok) return r1;
+      return saveScreening(id, { failReason });
+    });
   }
 
   function quickUnreachable(c: CandidateDTO) {
@@ -261,6 +264,50 @@ export default function ScreeningBoard({
           }
           onChanged={refresh}
         />
+      )}
+
+      {/* modal กรอกเหตุผลไม่ผ่าน */}
+      {failModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setFailModal(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-base font-bold text-slate-800">✕ ไม่ผ่านการคัดกรอง</h3>
+            <p className="mt-1 text-sm text-slate-500">
+              {failModal.name} — ระบุเหตุผล (เว้นว่างได้)
+            </p>
+            <textarea
+              autoFocus
+              value={failModal.reason}
+              onChange={(e) => setFailModal((m) => (m ? { ...m, reason: e.target.value } : m))}
+              onKeyDown={(e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") confirmFail();
+                if (e.key === "Escape") setFailModal(null);
+              }}
+              rows={3}
+              placeholder="เช่น ไม่มี notebook / ธุรกิจไม่ตรงเงื่อนไข / ไม่สะดวกเวลาอบรม"
+              className="mt-3 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none focus:border-red-500"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setFailModal(null)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                ยกเลิก
+              </button>
+              <button
+                onClick={confirmFail}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                ✕ ยืนยันไม่ผ่าน
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
