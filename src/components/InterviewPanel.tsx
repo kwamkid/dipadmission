@@ -196,11 +196,11 @@ export default function InterviewPanel({
               const v = c[g.key];
               return (
                 <div key={g.key} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 p-2.5">
-                  <span className="text-sm text-slate-700">{g.label}</span>
+                  <span className="text-base text-slate-700">{g.label}</span>
                   <div className="flex shrink-0 gap-1">
                     <button
                       onClick={() => save({ [g.key]: true })}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                      className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                         v === true ? "bg-green-600 text-white" : "border border-slate-300 text-slate-500"
                       }`}
                     >
@@ -208,7 +208,7 @@ export default function InterviewPanel({
                     </button>
                     <button
                       onClick={() => save({ [g.key]: false })}
-                      className={`rounded-md px-2.5 py-1 text-xs font-medium ${
+                      className={`rounded-md px-3 py-1.5 text-sm font-medium ${
                         v === false ? "bg-red-600 text-white" : "border border-slate-300 text-slate-500"
                       }`}
                     >
@@ -229,11 +229,11 @@ export default function InterviewPanel({
               const v = c[cr.key];
               return (
                 <div key={cr.key} className="rounded-xl border border-slate-200 p-3">
-                  <div className="text-sm font-medium text-slate-700">
+                  <div className="text-base font-semibold text-slate-700">
                     ข้อ {cr.no}. {cr.title}
-                    <span className="ml-1 text-xs font-normal text-slate-400">({cr.weight}%)</span>
+                    <span className="ml-1 text-sm font-normal text-slate-400">({cr.weight}%)</span>
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-500">💬 {cr.question}</div>
+                  <div className="mt-1 text-sm text-slate-500">💬 {cr.question}</div>
                   <div className="mt-2 space-y-1">
                     {[5, 4, 3, 2, 1].map((n) => {
                       const on = v === n;
@@ -241,18 +241,18 @@ export default function InterviewPanel({
                         <button
                           key={n}
                           onClick={() => save({ [cr.key]: n })}
-                          className={`flex w-full items-start gap-2 rounded-lg border p-2 text-left ${
+                          className={`flex w-full items-start gap-2.5 rounded-lg border p-2.5 text-left ${
                             on ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
                           }`}
                         >
                           <span
-                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
                               on ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"
                             }`}
                           >
                             {n}
                           </span>
-                          <span className={`text-xs leading-snug ${on ? "text-blue-900" : "text-slate-600"}`}>
+                          <span className={`text-sm leading-snug ${on ? "text-blue-900" : "text-slate-600"}`}>
                             {cr.levels[n as 1 | 2 | 3 | 4 | 5]}
                           </span>
                         </button>
