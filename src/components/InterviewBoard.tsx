@@ -78,6 +78,28 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
       .map((c) => [rankOf.get(c.id) ?? "-", interviewTotal(c), c.name, c.company ?? ""].join("\t")),
   ].join("\n");
 
+  // คัดลอกผลทั้งหมด (ทุกคน + คะแนนแยกข้อ) — วาง Sheet/Excel แยกคอลัมน์ได้
+  const exportAll = [
+    ["อันดับ", "ชื่อ", "กิจการ", "Gate", "ข้อ2", "ข้อ3", "ข้อ4", "ข้อ5", "ข้อ6", "ข้อ7", "คะแนนรวม", "ผล"].join("\t"),
+    ...ranked.map((c) => {
+      const g = gateStatus(c);
+      return [
+        rankOf.get(c.id) ?? "-",
+        c.name,
+        c.company ?? "",
+        g === true ? "ผ่าน" : g === false ? "ตก" : "-",
+        c.itvScore2 ?? "",
+        c.itvScore3 ?? "",
+        c.itvScore4 ?? "",
+        c.itvScore5 ?? "",
+        c.itvScore6 ?? "",
+        c.itvScore7 ?? "",
+        interviewTotal(c),
+        c.round2Result === "PASS" ? "เข้าร่วม" : c.round2Result === "FAIL" ? "ไม่ผ่าน" : "-",
+      ].join("\t");
+    }),
+  ].join("\n");
+
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
@@ -89,11 +111,18 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
                 ให้คะแนนตาม Matrix · คัดเหลือ {FINAL_TARGET} กิจการ · เลือกแล้ว {stats.selected}/{FINAL_TARGET}
               </p>
             </div>
-            <CopyButton
-              text={copyText}
-              label={`📋 คัดลอกผู้เข้าร่วม (${stats.selected})`}
-              doneMessage={`คัดลอกผู้เข้าร่วม ${stats.selected} กิจการแล้ว ✓`}
-            />
+            <div className="flex shrink-0 flex-col gap-1.5">
+              <CopyButton
+                text={copyText}
+                label={`📋 คัดลอกผู้เข้าร่วม (${stats.selected})`}
+                doneMessage={`คัดลอกผู้เข้าร่วม ${stats.selected} กิจการแล้ว ✓`}
+              />
+              <CopyButton
+                text={exportAll}
+                label="📊 คัดลอกผลทั้งหมด"
+                doneMessage={`คัดลอกผลสัมภาษณ์ทั้งหมด ${ranked.length} คนแล้ว ✓\n(วางใน Sheet/Excel แยกคอลัมน์ได้)`}
+              />
+            </div>
           </div>
           <TabNav active="interview" />
         </div>
@@ -116,6 +145,7 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
                 <th className="px-3 py-2.5">คิว</th>
                 <th className="px-3 py-2.5">Gate</th>
                 <th className="px-3 py-2.5">คะแนน</th>
+                <th className="px-3 py-2.5">ให้คะแนน</th>
                 <th className="px-3 py-2.5">ผลเลือก</th>
               </tr>
             </thead>
@@ -132,7 +162,7 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
               ))}
               {ranked.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-12 text-center text-slate-400">
+                  <td colSpan={7} className="px-3 py-12 text-center text-slate-400">
                     ยังไม่มีผู้จองช่องสัมภาษณ์ — จองช่องในหน้าคัดกรองก่อน
                   </td>
                 </tr>
@@ -276,8 +306,11 @@ function ItvRow({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: nu
           <span className="text-lg font-bold text-slate-800">{total}</span>
           <span className="text-xs text-slate-400">/100</span>
         </div>
-        <ScoreButton c={c} onOpen={onOpen} />
+        <div className="text-xs text-slate-400">
+          ประเมิน {[c.itvScore2, c.itvScore3, c.itvScore4, c.itvScore5, c.itvScore6, c.itvScore7].filter((x) => x != null).length}/6
+        </div>
       </td>
+      <td className="px-3 py-2.5"><ScoreButton c={c} onOpen={onOpen} /></td>
       <td className="px-3 py-2.5"><ResultButtons c={c} onPass={onPass} onFail={onFail} /></td>
     </tr>
   );
