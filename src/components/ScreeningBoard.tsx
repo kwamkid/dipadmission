@@ -551,7 +551,6 @@ function Row({
           </button>
           <button
             onClick={onFail}
-            title={c.result === "FAIL" && c.failReason ? `เหตุผล: ${c.failReason}` : undefined}
             className={`rounded-md px-2 py-1 text-sm font-medium ${
               c.result === "FAIL"
                 ? "bg-red-600 text-white"
@@ -559,9 +558,14 @@ function Row({
             }`}
           >
             ✕ ไม่ผ่าน
-            {c.result === "FAIL" && c.failReason ? " 📝" : ""}
           </button>
         </div>
+        {/* เหตุผลที่ไม่ผ่าน — แสดงใต้ปุ่ม */}
+        {c.result === "FAIL" && c.failReason && (
+          <div className="mt-1 max-w-[220px] whitespace-pre-wrap text-xs leading-snug text-rose-600">
+            📝 {c.failReason}
+          </div>
+        )}
       </td>
     </tr>
   );
