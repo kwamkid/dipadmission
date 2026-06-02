@@ -72,3 +72,41 @@ export async function getScreeningData(): Promise<{
 
   return { candidates, slots: slotDTOs };
 }
+
+export interface QueueSlot {
+  id: string;
+  day: string; // "2026-06-04"
+  label: string; // "บ.#1"
+  startTime: string;
+  endTime: string;
+  candidate: {
+    id: string;
+    name: string;
+    phone: string | null;
+    company: string | null;
+    province: string | null;
+    result: Result;
+  } | null;
+}
+
+/** สรุปคิวสัมภาษณ์ — ทุกช่องเรียงตามวัน/เวลา พร้อมผู้ที่จอง (ถ้ามี) */
+export async function getInterviewQueue(): Promise<QueueSlot[]> {
+  const slots = await prisma.interviewSlot.findMany({
+    orderBy: [{ day: "asc" }, { slotNo: "asc" }],
+    include: {
+      candidate: {
+        select: { id: true, name: true, phone: true, company: true, province: true, result: true },
+      },
+    },
+  });
+  return slots.map((s) => ({
+    id: s.id,
+    day: toIsoDate(s.day)!,
+    label: s.label,
+    startTime: s.startTime,
+    endTime: s.endTime,
+    candidate: s.candidate
+      ? { ...s.candidate, result: s.candidate.result as Result }
+      : null,
+  }));
+}

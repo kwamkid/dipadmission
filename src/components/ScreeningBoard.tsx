@@ -7,6 +7,7 @@ import { checklistComplete } from "@/lib/types";
 import { TARGET_PASS, TOTAL_SLOTS } from "@/lib/slots";
 import { setResult, setContactStatus, saveScreening } from "@/app/actions";
 import ScreeningPanel from "./ScreeningPanel";
+import TabNav from "./TabNav";
 
 type ResultFilter = "ALL" | "PENDING" | "PASS" | "FAIL";
 type StatusFilter = "ALL" | "PENDING" | "CONTACTED" | "UNREACHABLE";
@@ -144,6 +145,7 @@ export default function ScreeningBoard({
           <p className="mt-0.5 text-sm text-blue-100">
             โทรสัมภาษณ์ทีละคน · ผ่าน checklist แล้วจองช่องสัมภาษณ์ Online 4–5 มิ.ย. · เป้าหมายคัดเหลือ {TARGET_PASS} คน
           </p>
+          <TabNav active="screening" />
         </div>
       </header>
 
