@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import type { CandidateDTO, SlotDTO } from "@/lib/types";
 import { checklistComplete, canBookSlot, missingForBooking } from "@/lib/types";
 import { INTERVIEW_DAYS, TRAINING_GROUPS } from "@/lib/slots";
@@ -24,15 +24,20 @@ export default function ScreeningPanel({
   onNext?: () => void;
   onChanged: () => void;
 }) {
-  const c = candidate;
-  const [notes, setNotes] = useState(c.notes ?? "");
+  // optimistic overlay — ติ๊กแล้วเห็นผลทันที ไม่ต้องรอ server + refetch
+  const [over, setOver] = useState<Partial<CandidateDTO>>({});
+  const c = { ...candidate, ...over };
+  const [notes, setNotes] = useState(candidate.notes ?? "");
   const [busy, setBusy] = useState(false);
+  const [, startTransition] = useTransition();
 
-  // sync เมื่อสลับไปคนใหม่
+  // sync เมื่อสลับไปคนใหม่ (ล้าง optimistic overlay)
   useEffect(() => {
-    setNotes(c.notes ?? "");
-  }, [c.id, c.notes]);
+    setOver({});
+    setNotes(candidate.notes ?? "");
+  }, [candidate.id]);
 
+  // booking/result — กดทีละครั้ง รอ server จริง (อาจ error เช่นช่องถูกจอง/ผ่านไม่ได้)
   async function run(fn: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(true);
     const res = await fn();
@@ -41,8 +46,39 @@ export default function ScreeningPanel({
     onChanged();
   }
 
-  const save = (data: Parameters<typeof saveScreening>[1]) =>
-    run(() => saveScreening(c.id, data));
+  // checklist toggles — optimistic: อัปเดต UI ทันที แล้วบันทึกเบื้องหลัง
+  function save(data: Parameters<typeof saveScreening>[1]) {
+    setOver((o) => ({ ...o, ...data }));
+    startTransition(async () => {
+      const res = await saveScreening(candidate.id, data);
+      if (!res.ok) {
+        alert(res.error ?? "บันทึกไม่สำเร็จ");
+        setOver((o) => {
+          const n = { ...o };
+          for (const k of Object.keys(data)) delete n[k as keyof CandidateDTO];
+          return n;
+        });
+      }
+      onChanged();
+    });
+  }
+
+  // ตัดสินผล — optimistic เช่นกัน (revert ถ้า server ปฏิเสธ เช่น PASS แต่ไม่มี notebook)
+  function decide(result: CandidateDTO["result"]) {
+    setOver((o) => ({ ...o, result }));
+    startTransition(async () => {
+      const res = await setResult(candidate.id, result);
+      if (!res.ok) {
+        alert(res.error ?? "ไม่สำเร็จ");
+        setOver((o) => {
+          const n = { ...o };
+          delete n.result;
+          return n;
+        });
+      }
+      onChanged();
+    });
+  }
 
   const ready = checklistComplete(c);
 
@@ -303,9 +339,8 @@ export default function ScreeningPanel({
           </div>
           <div className="flex gap-2">
             <button
-              disabled={busy}
-              onClick={() => run(() => setResult(c.id, c.result === "PASS" ? "PENDING" : "PASS"))}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold ${
+              onClick={() => decide(c.result === "PASS" ? "PENDING" : "PASS")}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold active:scale-[0.97] ${
                 c.result === "PASS"
                   ? "bg-green-600 text-white"
                   : "border border-green-500 text-green-700 hover:bg-green-50"
@@ -314,9 +349,8 @@ export default function ScreeningPanel({
               ✓ ผ่านเข้ารอบสัมภาษณ์
             </button>
             <button
-              disabled={busy}
-              onClick={() => run(() => setResult(c.id, c.result === "FAIL" ? "PENDING" : "FAIL"))}
-              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold ${
+              onClick={() => decide(c.result === "FAIL" ? "PENDING" : "FAIL")}
+              className={`flex-1 rounded-lg py-2.5 text-sm font-semibold active:scale-[0.97] ${
                 c.result === "FAIL"
                   ? "bg-red-600 text-white"
                   : "border border-red-400 text-red-600 hover:bg-red-50"

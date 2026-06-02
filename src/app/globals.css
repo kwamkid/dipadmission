@@ -23,3 +23,33 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* ----- feedback ของปุ่มทั้งแอป: hover/active ให้รู้ว่ากดแล้ว ----- */
+@layer base {
+  button,
+  a[href],
+  [role="button"] {
+    transition: transform 0.08s ease, background-color 0.15s ease,
+      border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+      filter 0.15s ease, opacity 0.15s ease;
+  }
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+  /* hover: เน้นนิดหน่อยทุกปุ่ม (แม้ปุ่มที่ไม่ได้ตั้ง hover class ไว้) */
+  button:not(:disabled):hover,
+  a[href]:hover,
+  [role="button"]:hover {
+    filter: brightness(0.96);
+  }
+  /* active: ยุบเล็กน้อยตอนกด ให้รู้สึกว่ากดติด */
+  button:not(:disabled):active,
+  a[href]:active,
+  [role="button"]:active {
+    transform: scale(0.95);
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}

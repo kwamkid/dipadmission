@@ -26,6 +26,8 @@ export default function ScreeningBoard({
   const [onlyReady, setOnlyReady] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [live, setLive] = useState(true);
+  // optimistic overlay สำหรับ quick actions ในตาราง (ผ่าน/ไม่ผ่าน/ติดต่อ) — กดแล้วเห็นผลทันที
+  const [over, setOver] = useState<Record<string, Partial<CandidateDTO>>>({});
 
   // realtime sync — ดึงข้อมูลล่าสุดทุก 5 วิ ให้ทุกเครื่องเห็นตรงกัน
   const liveRef = useRef(live);
@@ -39,17 +41,23 @@ export default function ScreeningBoard({
     return () => clearInterval(t);
   }, [router]);
 
+  // ผสม optimistic overlay เข้ากับข้อมูลจาก server
+  const cands = useMemo(
+    () => candidates.map((c) => (over[c.id] ? { ...c, ...over[c.id] } : c)),
+    [candidates, over]
+  );
+
   const stats = useMemo(() => {
-    const passed = candidates.filter((c) => c.result === "PASS").length;
-    const failed = candidates.filter((c) => c.result === "FAIL").length;
-    const contacted = candidates.filter((c) => c.contactStatus === "CONTACTED").length;
+    const passed = cands.filter((c) => c.result === "PASS").length;
+    const failed = cands.filter((c) => c.result === "FAIL").length;
+    const contacted = cands.filter((c) => c.contactStatus === "CONTACTED").length;
     const booked = slots.filter((s) => s.takenBy).length;
-    return { passed, failed, contacted, booked, total: candidates.length };
-  }, [candidates, slots]);
+    return { passed, failed, contacted, booked, total: cands.length };
+  }, [cands, slots]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return candidates.filter((c) => {
+    return cands.filter((c) => {
       if (resultFilter !== "ALL" && c.result !== resultFilter) return false;
       if (statusFilter !== "ALL" && c.contactStatus !== statusFilter) return false;
       if (onlyReady && !checklistComplete(c)) return false;
@@ -59,7 +67,7 @@ export default function ScreeningBoard({
       }
       return true;
     });
-  }, [candidates, search, resultFilter, statusFilter, onlyReady]);
+  }, [cands, search, resultFilter, statusFilter, onlyReady]);
 
   const selectedIndex = filtered.findIndex((c) => c.id === selectedId);
   const selected = selectedIndex >= 0 ? filtered[selectedIndex] : null;
@@ -68,17 +76,30 @@ export default function ScreeningBoard({
     startTransition(() => router.refresh());
   }
 
-  async function quickResult(id: string, r: Result) {
-    const res = await setResult(id, r);
-    if (!res.ok) alert(res.error);
-    refresh();
+  // patch overlay ทันที + บันทึกเบื้องหลัง (revert ถ้า server ปฏิเสธ)
+  function patch(id: string, data: Partial<CandidateDTO>, fn: () => Promise<{ ok: boolean; error?: string }>) {
+    setOver((o) => ({ ...o, [id]: { ...o[id], ...data } }));
+    startTransition(async () => {
+      const res = await fn();
+      if (!res.ok) {
+        alert(res.error);
+        setOver((o) => {
+          const cur = { ...o[id] };
+          for (const k of Object.keys(data)) delete cur[k as keyof CandidateDTO];
+          return { ...o, [id]: cur };
+        });
+      }
+      router.refresh();
+    });
   }
 
-  async function quickUnreachable(c: CandidateDTO) {
+  function quickResult(id: string, r: Result) {
+    patch(id, { result: r }, () => setResult(id, r));
+  }
+
+  function quickUnreachable(c: CandidateDTO) {
     const next = c.contactStatus === "UNREACHABLE" ? "PENDING" : "UNREACHABLE";
-    const res = await setContactStatus(c.id, next);
-    if (!res.ok) alert(res.error);
-    refresh();
+    patch(c.id, { contactStatus: next }, () => setContactStatus(c.id, next));
   }
 
   return (
