@@ -150,6 +150,7 @@ export async function saveInterview(
     itvScore6?: number | null;
     itvScore7?: number | null;
     itvNotes?: string | null;
+    trainingGroups?: number[]; // เลือกกลุ่มอบรมสะดวก (พุธ/จันทร์) ได้อีกทีตอนสัมภาษณ์
   }
 ): Promise<ActionResult> {
   try {

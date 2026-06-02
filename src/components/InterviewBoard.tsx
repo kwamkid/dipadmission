@@ -199,6 +199,21 @@ function GateBadge({ c }: { c: CandidateDTO }) {
   return <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-400">—</span>;
 }
 
+function ScoreButton({ c, onOpen }: { c: CandidateDTO; onOpen: () => void }) {
+  const scored = [c.itvScore2, c.itvScore3, c.itvScore4, c.itvScore5, c.itvScore6, c.itvScore7].filter((x) => x != null).length;
+  const started = scored > 0 || gateStatus(c) != null;
+  return (
+    <button
+      onClick={onOpen}
+      className={`mt-1 rounded-md px-2 py-1 text-xs font-medium ${
+        started ? "border border-blue-300 text-blue-700 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"
+      }`}
+    >
+      {started ? `✏️ แก้คะแนน (${scored}/6)` : "📊 ให้คะแนน"}
+    </button>
+  );
+}
+
 function ResultButtons({ c, onPass, onFail }: { c: CandidateDTO; onPass: () => void; onFail: () => void }) {
   return (
     <div className="flex flex-nowrap gap-1 whitespace-nowrap">
@@ -261,9 +276,7 @@ function ItvRow({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: nu
           <span className="text-lg font-bold text-slate-800">{total}</span>
           <span className="text-xs text-slate-400">/100</span>
         </div>
-        <div className="text-xs text-slate-400">
-          ประเมิน {[c.itvScore2, c.itvScore3, c.itvScore4, c.itvScore5, c.itvScore6, c.itvScore7].filter((x) => x != null).length}/6
-        </div>
+        <ScoreButton c={c} onOpen={onOpen} />
       </td>
       <td className="px-3 py-2.5"><ResultButtons c={c} onPass={onPass} onFail={onFail} /></td>
     </tr>
@@ -291,7 +304,8 @@ function ItvCard({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: n
         </div>
       </div>
       <div className="mt-1 whitespace-pre-line text-xs text-violet-700">{c.interviewSlotLabel ?? ""}</div>
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <ScoreButton c={c} onOpen={onOpen} />
         <ResultButtons c={c} onPass={onPass} onFail={onFail} />
       </div>
     </div>

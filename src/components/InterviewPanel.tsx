@@ -9,6 +9,7 @@ import {
   interviewTotal,
   interviewComplete,
 } from "@/lib/interview";
+import { TRAINING_GROUPS } from "@/lib/slots";
 import { saveInterview, setRound2Result } from "@/app/actions";
 
 export default function InterviewPanel({
@@ -117,6 +118,65 @@ export default function InterviewPanel({
                 📞 {c.phone}
               </a>
             )}
+
+            {/* รายละเอียดประกอบการสัมภาษณ์ */}
+            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 text-sm">
+              <Info label="รายได้/ปี" value={c.income} />
+              <Info label="อายุ" value={c.age != null ? `${c.age}` : null} />
+              <Info label="ช่องทางขาย" value={c.channels.join(", ") || null} />
+              <Info label="ประเภท" value={c.position} />
+            </div>
+            {(c.facebookUrl || c.website) && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {c.facebookUrl && (
+                  <a href={c.facebookUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                    📘 Facebook ↗
+                  </a>
+                )}
+                {c.website && (
+                  <a href={c.website} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    🌐 เว็บไซต์ ↗
+                  </a>
+                )}
+              </div>
+            )}
+            {c.reason && (
+              <div className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+                <div className="mb-1 text-xs font-semibold text-amber-700">เหตุผลที่สมัคร</div>
+                {c.reason}
+              </div>
+            )}
+          </div>
+
+          {/* กลุ่มอบรมที่สะดวก (ยืนยันอีกครั้งตอนสัมภาษณ์) */}
+          <div className="mt-4 rounded-xl border border-slate-200 p-3">
+            <div className="text-sm font-medium text-slate-700">กลุ่มอบรมที่สะดวก (เลือกได้ทั้ง 2)</div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {[1, 2].map((g) => {
+                const on = c.trainingGroups.includes(g);
+                return (
+                  <button
+                    key={g}
+                    onClick={() =>
+                      save({
+                        trainingGroups: on
+                          ? c.trainingGroups.filter((x) => x !== g)
+                          : [...c.trainingGroups, g].sort(),
+                      })
+                    }
+                    className={`rounded-lg border p-2 text-left text-xs ${
+                      on ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                      <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"}`}>✓</span>
+                      {TRAINING_GROUPS[g].name}
+                    </div>
+                    <div className="mt-0.5 text-slate-500">{TRAINING_GROUPS[g].dates}</div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Gate */}
@@ -160,9 +220,11 @@ export default function InterviewPanel({
             })}
           </div>
 
-          {/* เกณฑ์ให้คะแนน 2–7 */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">📊 ข้อ 2–7 — ให้คะแนน 1–5 (70%)</h3>
-          <div className="space-y-2">
+          {/* เกณฑ์ให้คะแนน 2–7 — กดเลือกระดับที่ตรงกับคำตอบ (5=ดีสุด → 1=น้อยสุด) */}
+          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">
+            📊 ข้อ 2–7 — เลือกระดับที่ตรงที่สุด (70%)
+          </h3>
+          <div className="space-y-3">
             {CRITERIA.map((cr) => {
               const v = c[cr.key];
               return (
@@ -171,27 +233,32 @@ export default function InterviewPanel({
                     ข้อ {cr.no}. {cr.title}
                     <span className="ml-1 text-xs font-normal text-slate-400">({cr.weight}%)</span>
                   </div>
-                  <div className="mt-0.5 text-xs text-slate-500">{cr.question}</div>
-                  <div className="mt-2 flex gap-1.5">
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <button
-                        key={n}
-                        onClick={() => save({ [cr.key]: n })}
-                        className={`h-9 w-9 rounded-md text-sm font-semibold ${
-                          v === n
-                            ? "bg-blue-600 text-white"
-                            : "border border-slate-300 text-slate-500 hover:border-blue-400"
-                        }`}
-                      >
-                        {n}
-                      </button>
-                    ))}
+                  <div className="mt-0.5 text-xs text-slate-500">💬 {cr.question}</div>
+                  <div className="mt-2 space-y-1">
+                    {[5, 4, 3, 2, 1].map((n) => {
+                      const on = v === n;
+                      return (
+                        <button
+                          key={n}
+                          onClick={() => save({ [cr.key]: n })}
+                          className={`flex w-full items-start gap-2 rounded-lg border p-2 text-left ${
+                            on ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                              on ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {n}
+                          </span>
+                          <span className={`text-xs leading-snug ${on ? "text-blue-900" : "text-slate-600"}`}>
+                            {cr.levels[n as 1 | 2 | 3 | 4 | 5]}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  {v != null && (
-                    <div className="mt-1.5 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600">
-                      {cr.levels[v as 1 | 2 | 3 | 4 | 5]}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -242,5 +309,14 @@ export default function InterviewPanel({
         </div>
       </aside>
     </>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-slate-700">{value ?? "-"}</div>
+    </div>
   );
 }
