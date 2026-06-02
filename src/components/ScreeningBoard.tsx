@@ -244,8 +244,8 @@ export default function ScreeningBoard({
           <LegendDot cls="bg-rose-100/70" label="ไม่ผ่าน" />
         </div>
 
-        {/* Table */}
-        <div className="mt-2 max-h-[calc(100vh-220px)] overflow-auto rounded-xl border border-slate-200 bg-white">
+        {/* Table — เฉพาะจอใหญ่ (md ขึ้นไป) */}
+        <div className="mt-2 hidden max-h-[calc(100vh-220px)] overflow-auto rounded-xl border border-slate-200 bg-white md:block">
           <table className="w-full min-w-[1100px] text-base">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm font-semibold uppercase text-slate-500">
@@ -284,6 +284,25 @@ export default function ScreeningBoard({
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* การ์ด — เฉพาะมือถือ (เล็กกว่า md) */}
+        <div className="mt-2 space-y-2 md:hidden">
+          {filtered.map((c) => (
+            <CandidateCard
+              key={c.id}
+              c={c}
+              onOpen={() => setSelectedId(c.id)}
+              onPass={() => quickResult(c.id, c.result === "PASS" ? "PENDING" : "PASS")}
+              onFail={() => quickFail(c)}
+              onUnreachable={() => quickUnreachable(c)}
+            />
+          ))}
+          {filtered.length === 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-12 text-center text-slate-400">
+              {candidates.length === 0 ? "ยังไม่มีข้อมูลผู้สมัคร" : "ไม่พบรายการตามตัวกรอง"}
+            </div>
+          )}
         </div>
       </div>
 
@@ -452,30 +471,34 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
   );
 }
 
+// สีตามสถานะ: ผ่าน=เขียว · ไม่ผ่าน=แดง · ติดต่อไม่ได้=เทา · ติดต่อได้(ยังไม่ตัดสิน)=ฟ้า · ยังไม่โทร=เหลือง
+function rowToneFor(c: CandidateDTO): string {
+  return c.result === "PASS"
+    ? "bg-emerald-100/70"
+    : c.result === "FAIL"
+    ? "bg-rose-100/70"
+    : c.contactStatus === "UNREACHABLE"
+    ? "bg-slate-200/70"
+    : c.contactStatus === "CONTACTED"
+    ? "bg-sky-100/60"
+    : "bg-amber-50";
+}
+
+type RowHandlers = {
+  onOpen: () => void;
+  onPass: () => void;
+  onFail: () => void;
+  onUnreachable: () => void;
+};
+
 function Row({
   c,
   onOpen,
   onPass,
   onFail,
   onUnreachable,
-}: {
-  c: CandidateDTO;
-  onOpen: () => void;
-  onPass: () => void;
-  onFail: () => void;
-  onUnreachable: () => void;
-}) {
-  // สีทั้งแถวตามสถานะ: ผ่าน=เขียว · ไม่ผ่าน=แดง · ติดต่อไม่ได้=เทา · ติดต่อได้(ยังไม่ตัดสิน)=ฟ้า · ยังไม่โทร=เหลือง
-  const rowTone =
-    c.result === "PASS"
-      ? "bg-emerald-100/70"
-      : c.result === "FAIL"
-      ? "bg-rose-100/70"
-      : c.contactStatus === "UNREACHABLE"
-      ? "bg-slate-200/70"
-      : c.contactStatus === "CONTACTED"
-      ? "bg-sky-100/60"
-      : "bg-amber-50";
+}: { c: CandidateDTO } & RowHandlers) {
+  const rowTone = rowToneFor(c);
 
   return (
     <tr className={`border-b border-slate-100 transition hover:brightness-95 ${rowTone}`}>
@@ -589,5 +612,121 @@ function Row({
         )}
       </td>
     </tr>
+  );
+}
+
+/* การ์ดสำหรับมือถือ — ข้อมูลเดียวกับแถวตาราง */
+function CandidateCard({ c, onOpen, onPass, onFail, onUnreachable }: { c: CandidateDTO } & RowHandlers) {
+  return (
+    <div className={`rounded-xl border border-slate-200 p-3 ${rowToneFor(c)}`}>
+      {/* หัวการ์ด: ชื่อ + สถานะติดต่อ */}
+      <div className="flex items-start justify-between gap-2">
+        <button onClick={onOpen} className="text-left">
+          <div className="font-semibold text-blue-700">
+            <span className="text-slate-400">#{c.seq ?? "-"} · </span>
+            {c.name}
+          </div>
+          {c.position && <div className="text-xs text-slate-500">{c.position}</div>}
+        </button>
+        <button
+          onClick={onUnreachable}
+          className={`shrink-0 whitespace-nowrap rounded-md border px-2 py-1 text-xs font-medium ${
+            c.contactStatus === "UNREACHABLE"
+              ? "border-slate-400 bg-slate-200 text-slate-700"
+              : c.contactStatus === "CONTACTED"
+              ? "border-blue-300 bg-blue-50 text-blue-700"
+              : "border-amber-300 bg-amber-50 text-amber-700"
+          }`}
+        >
+          {c.contactStatus === "UNREACHABLE"
+            ? "ติดต่อไม่ได้"
+            : c.contactStatus === "CONTACTED"
+            ? "ติดต่อได้"
+            : "ยังไม่โทร"}
+        </button>
+      </div>
+
+      {/* โทร */}
+      {c.phone && (
+        <a
+          href={`tel:${c.phone}`}
+          className="mt-2 inline-flex items-center gap-1.5 text-base font-medium text-slate-700"
+        >
+          📞 {c.phone}
+        </a>
+      )}
+
+      {/* บริษัท / รายได้ / อายุ */}
+      <div className="mt-2 text-sm text-slate-600">
+        <div className="font-medium text-slate-700">{c.company ?? "-"}</div>
+        <div className="text-xs text-slate-500">
+          {[c.province, c.income, c.age != null ? `อายุ ${c.age}` : null].filter(Boolean).join(" · ")}
+        </div>
+      </div>
+
+      {/* ช่องทาง */}
+      {c.channels.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {c.channels.map((ch) => (
+            <ChannelBadge key={ch} name={ch} href={channelHref(ch, c)} />
+          ))}
+        </div>
+      )}
+
+      {/* checklist */}
+      <div className="mt-2 flex flex-wrap gap-1">
+        <MiniCheck ok={c.hasNotebook} label="notebook" />
+        <MiniCheck ok={c.availableLaunch} label="11มิ.ย." />
+        <MiniCheck
+          ok={c.trainingGroups.length > 0}
+          label={c.trainingGroups.length ? `กลุ่ม${c.trainingGroups.join(",")}` : "กลุ่ม"}
+        />
+        <MiniCheck ok={c.visitAvailable} label="visit" />
+        <MiniCheck ok={c.iindustryReg} label="i-industry" />
+      </div>
+
+      {/* จองเวลา */}
+      <div className="mt-2">
+        {c.interviewSlotLabel ? (
+          <span className="inline-block whitespace-pre-line rounded-md bg-violet-50 px-2 py-1 text-xs font-medium leading-tight text-violet-700">
+            {c.interviewSlotLabel}
+          </span>
+        ) : (
+          <button
+            onClick={onOpen}
+            className="rounded-md border border-dashed border-slate-300 px-2 py-1 text-xs text-slate-400"
+          >
+            — ยังไม่นัด —
+          </button>
+        )}
+      </div>
+
+      {/* ผลคัด */}
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={onPass}
+          className={`flex-1 rounded-md py-2 text-sm font-medium ${
+            c.result === "PASS"
+              ? "bg-green-600 text-white"
+              : "border border-green-300 text-green-700"
+          }`}
+        >
+          ✓ ผ่าน
+        </button>
+        <button
+          onClick={onFail}
+          className={`flex-1 rounded-md py-2 text-sm font-medium ${
+            c.result === "FAIL" ? "bg-red-600 text-white" : "border border-red-300 text-red-700"
+          }`}
+        >
+          ✕ ไม่ผ่าน
+        </button>
+      </div>
+      {c.result === "FAIL" && c.failReason && (
+        <div className="mt-1 whitespace-pre-wrap text-xs leading-snug text-rose-600">
+          📝 {c.failReason}
+        </div>
+      )}
+    </div>
   );
 }

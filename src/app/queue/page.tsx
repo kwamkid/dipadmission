@@ -30,7 +30,7 @@ export default async function QueuePage() {
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1100px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-xl font-bold">🗓️ สรุปคิวสัมภาษณ์ Online (4–5 มิ.ย.)</h1>
@@ -48,7 +48,7 @@ export default async function QueuePage() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1100px] space-y-6 px-5 py-5">
+      <div className="mx-auto max-w-[1500px] space-y-6 px-5 py-5">
         {INTERVIEW_DAYS.map((d) => {
           const daySlots = slots.filter((s) => s.day === d.date);
           const dayBooked = daySlots.filter((s) => s.candidate).length;
@@ -67,42 +67,46 @@ export default async function QueuePage() {
                   return (
                     <div
                       key={s.id}
-                      className={`flex items-center gap-3 border-b border-slate-100 px-4 py-2.5 last:border-0 ${
+                      className={`flex flex-col gap-1 border-b border-slate-100 px-4 py-2.5 last:border-0 sm:flex-row sm:items-center sm:gap-3 ${
                         c ? "" : "bg-slate-50/50"
                       }`}
                     >
-                      <span className="w-20 shrink-0 text-sm font-semibold text-violet-700">
-                        {s.label.replace("บ.#", "คิวที่ ")}
-                      </span>
-                      <span className="w-28 shrink-0 text-sm text-slate-500">
-                        {s.startTime}-{s.endTime}
-                      </span>
+                      <div className="flex items-center gap-3 sm:contents">
+                        <span className="w-20 shrink-0 text-sm font-semibold text-violet-700">
+                          {s.label.replace("บ.#", "คิวที่ ")}
+                        </span>
+                        <span className="shrink-0 text-sm text-slate-500 sm:w-28">
+                          {s.startTime}-{s.endTime}
+                        </span>
+                      </div>
                       {c ? (
                         <>
                           <div className="min-w-0 flex-1">
-                            <div className="truncate font-medium text-slate-800">{c.name}</div>
-                            <div className="truncate text-xs text-slate-500">
+                            <div className="font-medium text-slate-800">{c.name}</div>
+                            <div className="text-xs text-slate-500">
                               {[c.company, c.province].filter(Boolean).join(" · ") || "-"}
                             </div>
                           </div>
-                          {c.phone && (
-                            <a
-                              href={`tel:${c.phone}`}
-                              className="shrink-0 text-sm text-slate-600 hover:text-green-700 hover:underline"
-                            >
-                              📞 {c.phone}
-                            </a>
-                          )}
-                          {c.result === "PASS" && (
-                            <span className="shrink-0 rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                              ผ่าน
-                            </span>
-                          )}
-                          {c.result === "FAIL" && (
-                            <span className="shrink-0 rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
-                              ไม่ผ่าน
-                            </span>
-                          )}
+                          <div className="flex shrink-0 items-center gap-2">
+                            {c.phone && (
+                              <a
+                                href={`tel:${c.phone}`}
+                                className="text-sm text-slate-600 hover:text-green-700 hover:underline"
+                              >
+                                📞 {c.phone}
+                              </a>
+                            )}
+                            {c.result === "PASS" && (
+                              <span className="rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700">
+                                ผ่าน
+                              </span>
+                            )}
+                            {c.result === "FAIL" && (
+                              <span className="rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                                ไม่ผ่าน
+                              </span>
+                            )}
+                          </div>
                         </>
                       ) : (
                         <span className="flex-1 text-sm text-slate-300">— ว่าง —</span>
