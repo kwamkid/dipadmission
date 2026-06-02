@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { CandidateDTO, SlotDTO, Result } from "@/lib/types";
 import { checklistComplete } from "@/lib/types";
 import { TARGET_PASS, TOTAL_SLOTS } from "@/lib/slots";
-import { setResult, setContactStatus } from "@/app/actions";
+import { setResult, setContactStatus, saveScreening } from "@/app/actions";
 import ScreeningPanel from "./ScreeningPanel";
 
 type ResultFilter = "ALL" | "PENDING" | "PASS" | "FAIL";
@@ -99,6 +99,26 @@ export default function ScreeningBoard({
       id,
       { result: r, ...(r !== "PENDING" && { contactStatus: "CONTACTED" as const }) },
       () => setResult(id, r)
+    );
+  }
+
+  // กด "ไม่ผ่าน" ในตาราง → ถามเหตุผลก่อน (กดซ้ำตอนเป็น FAIL = ยกเลิก)
+  function quickFail(c: CandidateDTO) {
+    if (c.result === "FAIL") {
+      quickResult(c.id, "PENDING");
+      return;
+    }
+    const reason = window.prompt("เหตุผลที่ไม่ผ่าน (เว้นว่างได้):", c.failReason ?? "");
+    if (reason === null) return; // กดยกเลิก = ไม่ทำอะไร
+    const failReason = reason.trim() || null;
+    patch(
+      c.id,
+      { result: "FAIL", contactStatus: "CONTACTED", failReason },
+      async () => {
+        const r1 = await setResult(c.id, "FAIL");
+        if (!r1.ok) return r1;
+        return saveScreening(c.id, { failReason });
+      }
     );
   }
 
@@ -208,7 +228,7 @@ export default function ScreeningBoard({
                   c={c}
                   onOpen={() => setSelectedId(c.id)}
                   onPass={() => quickResult(c.id, c.result === "PASS" ? "PENDING" : "PASS")}
-                  onFail={() => quickResult(c.id, c.result === "FAIL" ? "PENDING" : "FAIL")}
+                  onFail={() => quickFail(c)}
                   onUnreachable={() => quickUnreachable(c)}
                 />
               ))}
@@ -454,6 +474,7 @@ function Row({
           </button>
           <button
             onClick={onFail}
+            title={c.result === "FAIL" && c.failReason ? `เหตุผล: ${c.failReason}` : undefined}
             className={`rounded-md px-2 py-1 text-sm font-medium ${
               c.result === "FAIL"
                 ? "bg-red-600 text-white"
@@ -461,6 +482,7 @@ function Row({
             }`}
           >
             ✕ ไม่ผ่าน
+            {c.result === "FAIL" && c.failReason ? " 📝" : ""}
           </button>
         </div>
       </td>
