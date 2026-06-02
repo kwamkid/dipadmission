@@ -34,6 +34,7 @@ export async function saveScreening(
           consultDate: data.consultDate ? new Date(data.consultDate) : null,
         }),
         ...(data.iindustryReg !== undefined && { iindustryReg: data.iindustryReg }),
+        ...(data.failReason !== undefined && { failReason: data.failReason }),
         ...(data.notes !== undefined && { notes: data.notes }),
       },
     });
