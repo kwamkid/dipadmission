@@ -1,6 +1,8 @@
 import { getInterviewQueue } from "@/lib/data";
 import { INTERVIEW_DAYS, TOTAL_SLOTS } from "@/lib/slots";
+import { thaiWeekdayShort, thaiDateShort } from "@/lib/format";
 import TabNav from "@/components/TabNav";
+import CopyButton from "@/components/CopyButton";
 
 export const dynamic = "force-dynamic";
 
@@ -8,14 +10,40 @@ export default async function QueuePage() {
   const slots = await getInterviewQueue();
   const booked = slots.filter((s) => s.candidate).length;
 
+  // ข้อความสำหรับคัดลอก (เฉพาะช่องที่จองแล้ว) — คั่นด้วย tab วาง Sheet/Excel ได้
+  const copyText = [
+    ["คิว", "วัน", "เวลา", "ชื่อ", "กิจการ", "เบอร์"].join("\t"),
+    ...slots
+      .filter((s) => s.candidate)
+      .map((s) =>
+        [
+          s.label.replace("บ.#", "คิวที่ "),
+          `${thaiWeekdayShort(s.day)} ${thaiDateShort(s.day)}`,
+          `${s.startTime}-${s.endTime}`,
+          s.candidate!.name,
+          s.candidate!.company ?? "",
+          s.candidate!.phone ?? "",
+        ].join("\t")
+      ),
+  ].join("\n");
+
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
         <div className="mx-auto max-w-[1100px] px-5 py-4">
-          <h1 className="text-xl font-bold">🗓️ สรุปคิวสัมภาษณ์ Online (4–5 มิ.ย.)</h1>
-          <p className="mt-0.5 text-sm text-blue-100">
-            จองแล้ว {booked}/{TOTAL_SLOTS} ช่อง · ว่างเหลือ {TOTAL_SLOTS - booked} ช่อง
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold">🗓️ สรุปคิวสัมภาษณ์ Online (4–5 มิ.ย.)</h1>
+              <p className="mt-0.5 text-sm text-blue-100">
+                จองแล้ว {booked}/{TOTAL_SLOTS} ช่อง · ว่างเหลือ {TOTAL_SLOTS - booked} ช่อง
+              </p>
+            </div>
+            <CopyButton
+              text={copyText}
+              label={`📋 คัดลอกตารางคิว (${booked})`}
+              doneMessage={`คัดลอกตารางคิว ${booked} คิวแล้ว ✓\n(วางใน Google Sheet / Excel ได้เลย)`}
+            />
+          </div>
           <TabNav active="queue" />
         </div>
       </header>
