@@ -136,6 +136,20 @@ export default function ScreeningBoard({
     patch(c.id, { contactStatus: next }, () => setContactStatus(c.id, next));
   }
 
+  // คัดลอกรายชื่อผู้ผ่าน (ชื่อ + กิจการ, คั่นด้วย tab → วาง Sheet/Excel แยกคอลัมน์ได้)
+  function copyPassed() {
+    const passed = cands.filter((c) => c.result === "PASS");
+    if (passed.length === 0) {
+      alert("ยังไม่มีผู้ที่ผ่าน");
+      return;
+    }
+    const text = passed.map((c) => `${c.name}\t${c.company ?? ""}`).join("\n");
+    navigator.clipboard
+      .writeText(text)
+      .then(() => alert(`คัดลอกรายชื่อผู้ผ่าน ${passed.length} คนแล้ว ✓\n(วางใน Google Sheet / Excel ได้เลย)`))
+      .catch(() => alert("คัดลอกไม่สำเร็จ — ลองใหม่อีกครั้ง"));
+  }
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -198,8 +212,15 @@ export default function ScreeningBoard({
             เฉพาะ checklist ครบ
           </label>
           <button
+            onClick={copyPassed}
+            className="ml-auto flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+            title="คัดลอกชื่อ+กิจการของผู้ที่ผ่าน ไปวางใน Sheet/Excel ได้"
+          >
+            📋 คัดลอกรายชื่อผู้ผ่าน ({stats.passed})
+          </button>
+          <button
             onClick={() => setLive((v) => !v)}
-            className={`ml-auto flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
+            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium ${
               live ? "border-green-300 bg-green-50 text-green-700" : "border-slate-300 text-slate-400"
             }`}
             title="ซิงค์ข้อมูลอัตโนมัติทุก 5 วินาที"
