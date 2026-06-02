@@ -4,6 +4,9 @@ const nextConfig = {
   // ให้ build แยกโฟลเดอร์ได้ (กันชนกับ dev server ที่ใช้ .next อยู่ → แก้ glitch "Cannot find module for page")
   // ปกติใช้ .next; ตอน verify build ใช้ NEXT_DIST_DIR=.next-verify เพื่อไม่ชนกับ dev
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // อย่า bundle Prisma client → require สดจาก node_modules
+  // (เวลา prisma generate เพิ่ม field ใหม่ รีสตาร์ท dev เห็นทันที ไม่ต้องล้าง .next)
+  serverExternalPackages: ["@prisma/client", "prisma"],
 };
 
 export default nextConfig;
