@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// ผู้สมัครเข้าโครงการ (Round 1 = phone screening, Round 2 = zoom interview)
+model Candidate {
+  id        String  @id @default(cuid())
+  seq       Int? // เลขลำดับ # จาก CSV เดิม
+  score     Int? // คะแนนที่ให้มาก่อนแล้ว
+  name      String
+  phone     String?
+  company   String?
+  province  String?
+  position  String? // ตำแหน่ง เช่น เจ้าของบริษัท
+  income    String? // รายได้ เช่น 1-2M, 300-500K
+  channels  String[] // ช่องทาง FB / TikTok / Web / LINE
+  age       Int?
+  reason    String? // เหตุผลที่เขียนมา
+
+  facebookUrl String? // ลิงก์เพจ Facebook (ถ้าเป็น URL)
+  website     String? // ลิงก์เว็บไซต์ (ถ้าเป็น URL)
+
+  // ----- สถานะการคัดกรอง Round 1 (โทรสัมภาษณ์) -----
+  contactStatus   ContactStatus @default(PENDING) // ติดต่อได้/ไม่ได้
+  hasNotebook     Boolean       @default(false) // (จำเป็น) มี notebook สำหรับเข้าอบรม
+  availableLaunch Boolean       @default(false) // ว่างมาพิธีเปิด 11 มิ.ย. 09:00 (Zoom 2 ชม.)
+  trainingGroups  Int[]         @default([]) // กลุ่มเทรนนิ่งที่เข้าได้: 1 = ทุกพุธ, 2 = ทุกจันทร์ (เลือกได้หลายกลุ่ม)
+  consultDate     DateTime?     @db.Date // Personal Consult on-site 12-22 มิ.ย. (เลือก 1 วัน)
+  iindustryReg    Boolean       @default(false) // ลงทะเบียน i-industry ก่อน 23 มิ.ย.
+
+  // ----- การจองช่องสัมภาษณ์ -----
+  interviewSlotId String?        @unique
+  interviewSlot   InterviewSlot? @relation(fields: [interviewSlotId], references: [id], onDelete: SetNull)
+
+  // ----- ผลคัด -----
+  result       Result @default(PENDING) // ผลคัด Round 1
+  round2Result Result @default(PENDING) // ผลคัด Round 2 (zoom) — ทำต่อภายหลัง
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([result])
+  @@index([contactStatus])
+}
+
+/// ช่องเวลาสัมภาษณ์ Online 4-5 มิ.ย. (รวม 30 ช่อง, 15 ช่อง/วัน)
+model InterviewSlot {
+  id        String     @id @default(cuid())
+  day       DateTime   @db.Date // 2026-06-04 (พฤ) / 2026-06-05 (ศ)
+  slotNo    Int // ลำดับช่องในวัน 1..15
+  label     String // บ.#1 ... บ.#30
+  startTime String // "09:00"
+  endTime   String // "09:15"
+  candidate Candidate?
+
+  @@unique([day, slotNo])
+  @@index([day])
+}
+
+enum ContactStatus {
+  PENDING // ยังไม่ได้โทร
+  CONTACTED // ติดต่อได้
+  UNREACHABLE // ติดต่อไม่ได้
+}
+
+enum Result {
+  PENDING // ยังไม่ตัดสิน
+  PASS // ผ่าน
+  FAIL // ไม่ผ่าน
+}
