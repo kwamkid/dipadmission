@@ -134,3 +134,40 @@ export async function setResult(id: string, result: Result): Promise<ActionResul
     return { ok: false, error: (e as Error).message };
   }
 }
+
+/** บันทึกคะแนนสัมภาษณ์ Round 3 (Matrix) */
+export async function saveInterview(
+  id: string,
+  data: {
+    itvGate1a?: boolean | null;
+    itvGate1b?: boolean | null;
+    itvGate1c?: boolean | null;
+    itvGate1d?: boolean | null;
+    itvScore2?: number | null;
+    itvScore3?: number | null;
+    itvScore4?: number | null;
+    itvScore5?: number | null;
+    itvScore6?: number | null;
+    itvScore7?: number | null;
+    itvNotes?: string | null;
+  }
+): Promise<ActionResult> {
+  try {
+    await prisma.candidate.update({ where: { id }, data });
+    revalidatePath("/interview");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** ตัดสินผลสัมภาษณ์ Round 3 — PASS = ได้เข้าร่วมโครงการ (15 คน) */
+export async function setRound2Result(id: string, result: Result): Promise<ActionResult> {
+  try {
+    await prisma.candidate.update({ where: { id }, data: { round2Result: result } });
+    revalidatePath("/interview");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}

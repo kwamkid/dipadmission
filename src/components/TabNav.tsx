@@ -3,6 +3,7 @@ import Link from "next/link";
 const TABS = [
   { href: "/screening", label: "📋 คัดกรอง", key: "screening" },
   { href: "/queue", label: "🗓️ คิวสัมภาษณ์", key: "queue" },
+  { href: "/interview", label: "🎤 สัมภาษณ์", key: "interview" },
 ];
 
 /** เมนูแท็บสลับหน้า — วางในส่วน header (พื้นน้ำเงิน ตัวอักษรขาว) */

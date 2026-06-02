@@ -42,8 +42,21 @@ model Candidate {
   // ----- ผลคัด -----
   result       Result  @default(PENDING) // ผลคัด Round 1
   failReason   String? // เหตุผลที่ "ไม่ผ่าน" (กรอกตอนกดไม่ผ่าน)
-  round2Result Result  @default(PENDING) // ผลคัด Round 2 (zoom) — ทำต่อภายหลัง
+  round2Result Result  @default(PENDING) // ผลคัด Round 3 (สัมภาษณ์ Zoom): PASS = ได้เข้าร่วม (15 คน)
   notes        String?
+
+  // ----- คะแนนสัมภาษณ์ Round 3 (Matrix) -----
+  itvGate1a Boolean? // มาพิธีเปิด 11 มิ.ย.
+  itvGate1b Boolean? // group sessions x4
+  itvGate1c Boolean? // on-site x5
+  itvGate1d Boolean? // i-industry ก่อน 23 มิ.ย.
+  itvScore2 Int? // จำเป็นเว็บ/AI (1-5)
+  itvScore3 Int? // สินค้าชัด
+  itvScore4 Int? // ประสบการณ์ออนไลน์
+  itvScore5 Int? // ความตั้งใจ
+  itvScore6 Int? // ต้นทุนเดิม
+  itvScore7 Int? // ทักษะ digital
+  itvNotes  String? // โน้ตจากการสัมภาษณ์
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

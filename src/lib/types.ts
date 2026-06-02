@@ -44,6 +44,19 @@ export interface CandidateDTO {
   failReason: string | null;
   round2Result: Result;
   notes: string | null;
+
+  // คะแนนสัมภาษณ์ Round 3
+  itvGate1a: boolean | null;
+  itvGate1b: boolean | null;
+  itvGate1c: boolean | null;
+  itvGate1d: boolean | null;
+  itvScore2: number | null;
+  itvScore3: number | null;
+  itvScore4: number | null;
+  itvScore5: number | null;
+  itvScore6: number | null;
+  itvScore7: number | null;
+  itvNotes: string | null;
 }
 
 // เงื่อนไขที่ต้องครบ "ก่อนเลือกช่องวันสัมภาษณ์"
