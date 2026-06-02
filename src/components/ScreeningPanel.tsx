@@ -15,6 +15,7 @@ export default function ScreeningPanel({
   onPrev,
   onNext,
   onChanged,
+  onOptimistic,
 }: {
   candidate: CandidateDTO;
   slots: SlotDTO[];
@@ -23,81 +24,56 @@ export default function ScreeningPanel({
   onPrev?: () => void;
   onNext?: () => void;
   onChanged: () => void;
+  onOptimistic: (id: string, data: Partial<CandidateDTO>) => void; // อัปเดต overlay ร่วม → ตารางตามทันที
 }) {
-  // optimistic overlay — ติ๊กแล้วเห็นผลทันที ไม่ต้องรอ server + refetch
-  const [over, setOver] = useState<Partial<CandidateDTO>>({});
-  const c = { ...candidate, ...over };
+  // candidate ถูก merge กับ optimistic overlay มาจาก board แล้ว → ตาราง + แถบข้างตรงกันเสมอ
+  const c = candidate;
   const [notes, setNotes] = useState(candidate.notes ?? "");
   const [failReason, setFailReason] = useState(candidate.failReason ?? "");
   const [, startTransition] = useTransition();
 
-  // sync เมื่อสลับไปคนใหม่ (ล้าง optimistic overlay)
+  // sync ช่องกรอกเมื่อสลับไปคนใหม่
   useEffect(() => {
-    setOver({});
     setNotes(candidate.notes ?? "");
     setFailReason(candidate.failReason ?? "");
   }, [candidate.id]);
 
-  // จองช่องสัมภาษณ์ — optimistic (revert ถ้า server ปฏิเสธ เช่น ช่องถูกจองแล้ว/ติ๊กไม่ครบ)
-  function book(slotId: string) {
-    const target = c.interviewSlotId === slotId ? null : slotId; // กดช่องเดิมซ้ำ = ยกเลิกจอง
-    const slot = target ? slots.find((s) => s.id === target) : null;
-    const label = slot
-      ? slotLabelLines(slot.label, slot.day, slot.startTime, slot.endTime)
-      : null;
-    setOver((o) => ({ ...o, interviewSlotId: target, interviewSlotLabel: label }));
+  // apply optimistic ไป overlay ร่วม (board) + ยิง server + revert ถ้า server ปฏิเสธ
+  function commit(data: Partial<CandidateDTO>, fn: () => Promise<{ ok: boolean; error?: string }>) {
+    const revert: Record<string, unknown> = {};
+    const src = candidate as unknown as Record<string, unknown>;
+    for (const k of Object.keys(data)) revert[k] = src[k];
+    onOptimistic(candidate.id, data);
     startTransition(async () => {
-      const res = await bookSlot(candidate.id, target);
-      if (!res.ok) {
-        alert(res.error ?? "จองไม่สำเร็จ");
-        setOver((o) => {
-          const n = { ...o };
-          delete n.interviewSlotId;
-          delete n.interviewSlotLabel;
-          return n;
-        });
-      }
-      onChanged();
-    });
-  }
-
-  // checklist toggles — optimistic: อัปเดต UI ทันที แล้วบันทึกเบื้องหลัง
-  function save(data: Parameters<typeof saveScreening>[1]) {
-    setOver((o) => ({ ...o, ...data }));
-    startTransition(async () => {
-      const res = await saveScreening(candidate.id, data);
-      if (!res.ok) {
-        alert(res.error ?? "บันทึกไม่สำเร็จ");
-        setOver((o) => {
-          const n = { ...o };
-          for (const k of Object.keys(data)) delete n[k as keyof CandidateDTO];
-          return n;
-        });
-      }
-      onChanged();
-    });
-  }
-
-  // ตัดสินผล — optimistic (ตัดสินผ่าน/ไม่ผ่าน = ติดต่อแล้ว → ตั้งสถานะ "ติดต่อได้" ด้วย)
-  function decide(result: CandidateDTO["result"]) {
-    setOver((o) => ({
-      ...o,
-      result,
-      ...(result !== "PENDING" && { contactStatus: "CONTACTED" as const }),
-    }));
-    startTransition(async () => {
-      const res = await setResult(candidate.id, result);
+      const res = await fn();
       if (!res.ok) {
         alert(res.error ?? "ไม่สำเร็จ");
-        setOver((o) => {
-          const n = { ...o };
-          delete n.result;
-          delete n.contactStatus;
-          return n;
-        });
+        onOptimistic(candidate.id, revert as Partial<CandidateDTO>);
       }
       onChanged();
     });
+  }
+
+  // จองช่องสัมภาษณ์ (กดช่องเดิมซ้ำ = ยกเลิกจอง) — revert ถ้าช่องถูกจองแล้ว/ติ๊กไม่ครบ
+  function book(slotId: string) {
+    const target = c.interviewSlotId === slotId ? null : slotId;
+    const slot = target ? slots.find((s) => s.id === target) : null;
+    const label = slot ? slotLabelLines(slot.label, slot.day, slot.startTime, slot.endTime) : null;
+    commit({ interviewSlotId: target, interviewSlotLabel: label }, () => bookSlot(candidate.id, target));
+  }
+
+  // checklist toggles + notes/failReason
+  function save(data: Parameters<typeof saveScreening>[1]) {
+    commit(data as Partial<CandidateDTO>, () => saveScreening(candidate.id, data));
+  }
+
+  // ตัดสินผล (ผ่าน/ไม่ผ่าน = ติดต่อแล้ว → ตั้งสถานะ "ติดต่อได้" ด้วย)
+  function decide(result: CandidateDTO["result"]) {
+    const data: Partial<CandidateDTO> = {
+      result,
+      ...(result !== "PENDING" && { contactStatus: "CONTACTED" as const }),
+    };
+    commit(data, () => setResult(candidate.id, result));
   }
 
   const ready = checklistComplete(c);
@@ -349,18 +325,6 @@ export default function ScreeningPanel({
             <span className="text-slate-500">{c.interviewSlotLabel ?? "ยังไม่จองช่อง"}</span>
           </div>
 
-          {/* เหตุผลที่ไม่ผ่าน — โผล่เมื่อเลือก "ไม่ผ่าน" */}
-          {c.result === "FAIL" && (
-            <textarea
-              value={failReason}
-              onChange={(e) => setFailReason(e.target.value)}
-              onBlur={() => failReason !== (c.failReason ?? "") && save({ failReason })}
-              rows={2}
-              placeholder="เหตุผลที่ไม่ผ่าน… (เช่น ไม่มี notebook / ธุรกิจไม่ตรงเงื่อนไข / ไม่สะดวกเวลาอบรม)"
-              className="mb-2 w-full rounded-lg border border-red-300 bg-red-50/50 p-2.5 text-sm outline-none focus:border-red-500"
-            />
-          )}
-
           <div className="flex gap-2">
             <button
               onClick={() => decide(c.result === "PASS" ? "PENDING" : "PASS")}
@@ -383,6 +347,21 @@ export default function ScreeningPanel({
               ✕ ไม่ผ่าน
             </button>
           </div>
+
+          {/* เหตุผลที่ไม่ผ่าน — โผล่ใต้ปุ่มเมื่อเลือก "ไม่ผ่าน" */}
+          {c.result === "FAIL" && (
+            <div className="mt-2">
+              <label className="mb-1 block text-xs font-medium text-red-600">เหตุผลที่ไม่ผ่าน</label>
+              <textarea
+                value={failReason}
+                onChange={(e) => setFailReason(e.target.value)}
+                onBlur={() => failReason !== (c.failReason ?? "") && save({ failReason })}
+                rows={2}
+                placeholder="เช่น ไม่มี notebook / ธุรกิจไม่ตรงเงื่อนไข / ไม่สะดวกเวลาอบรม"
+                className="w-full rounded-lg border border-red-300 bg-red-50/50 p-2.5 text-sm outline-none focus:border-red-500"
+              />
+            </div>
+          )}
         </div>
       </aside>
     </>

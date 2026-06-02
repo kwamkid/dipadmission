@@ -78,6 +78,11 @@ export default function ScreeningBoard({
     startTransition(() => router.refresh());
   }
 
+  // อัปเดต overlay ร่วม (ใช้โดยแถบข้าง panel → ตารางตามทันที แม้ปิด panel ไปแล้ว)
+  function applyOverlay(id: string, data: Partial<CandidateDTO>) {
+    setOver((o) => ({ ...o, [id]: { ...o[id], ...data } }));
+  }
+
   // patch overlay ทันที + บันทึกเบื้องหลัง (revert ถ้า server ปฏิเสธ)
   function patch(id: string, data: Partial<CandidateDTO>, fn: () => Promise<{ ok: boolean; error?: string }>) {
     setOver((o) => ({ ...o, [id]: { ...o[id], ...data } }));
@@ -206,8 +211,18 @@ export default function ScreeningBoard({
           </span>
         </div>
 
+        {/* Legend สีแถว */}
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <span className="font-medium text-slate-400">สีแถว:</span>
+          <LegendDot cls="bg-amber-50" label="ยังไม่โทร" />
+          <LegendDot cls="bg-sky-100/60" label="ติดต่อได้ (ยังไม่ตัดสิน)" />
+          <LegendDot cls="bg-slate-200/70" label="ติดต่อไม่ได้" />
+          <LegendDot cls="bg-emerald-100/70" label="ผ่าน" />
+          <LegendDot cls="bg-rose-100/70" label="ไม่ผ่าน" />
+        </div>
+
         {/* Table */}
-        <div className="mt-3 max-h-[calc(100vh-220px)] overflow-auto rounded-xl border border-slate-200 bg-white">
+        <div className="mt-2 max-h-[calc(100vh-220px)] overflow-auto rounded-xl border border-slate-200 bg-white">
           <table className="w-full min-w-[1100px] text-base">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm font-semibold uppercase text-slate-500">
@@ -263,6 +278,7 @@ export default function ScreeningBoard({
               : undefined
           }
           onChanged={refresh}
+          onOptimistic={applyOverlay}
         />
       )}
 
@@ -364,6 +380,15 @@ function Select({
   );
 }
 
+function LegendDot({ cls, label }: { cls: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`h-3 w-4 rounded border border-slate-300 ${cls}`} />
+      {label}
+    </span>
+  );
+}
+
 function ChannelBadge({ name, href }: { name: string; href?: string | null }) {
   const colors: Record<string, string> = {
     FB: "bg-blue-100 text-blue-700",
@@ -417,17 +442,20 @@ function Row({
   onFail: () => void;
   onUnreachable: () => void;
 }) {
+  // สีทั้งแถวตามสถานะ: ผ่าน=เขียว · ไม่ผ่าน=แดง · ติดต่อไม่ได้=เทา · ติดต่อได้(ยังไม่ตัดสิน)=ฟ้า · ยังไม่โทร=เหลือง
   const rowTone =
     c.result === "PASS"
-      ? "bg-green-50/60"
+      ? "bg-emerald-100/70"
       : c.result === "FAIL"
-      ? "bg-red-50/40"
+      ? "bg-rose-100/70"
       : c.contactStatus === "UNREACHABLE"
-      ? "bg-slate-50"
-      : "";
+      ? "bg-slate-200/70"
+      : c.contactStatus === "CONTACTED"
+      ? "bg-sky-100/60"
+      : "bg-amber-50";
 
   return (
-    <tr className={`border-b border-slate-100 hover:bg-blue-50/40 ${rowTone}`}>
+    <tr className={`border-b border-slate-100 transition hover:brightness-95 ${rowTone}`}>
       <td className="px-3 py-2.5">
         <button
           onClick={onUnreachable}
