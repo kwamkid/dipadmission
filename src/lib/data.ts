@@ -56,6 +56,8 @@ function toCandidateDTO(c: CandidateRow): CandidateDTO {
     itvScore6: c.itvScore6,
     itvScore7: c.itvScore7,
     itvNotes: c.itvNotes,
+    finalGroup: c.finalGroup,
+    visitCoach: c.visitCoach,
   };
 }
 
@@ -132,6 +134,16 @@ export async function getInterviewees(): Promise<CandidateDTO[]> {
   const rows = await prisma.candidate.findMany({
     where: { interviewSlotId: { not: null } },
     orderBy: [{ interviewSlot: { day: "asc" } }, { interviewSlot: { slotNo: "asc" } }],
+    include: { interviewSlot: true },
+  });
+  return rows.map(toCandidateDTO);
+}
+
+/** ผู้ผ่านรอบ Final (15 ผู้ชนะ = round2Result PASS) สำหรับจัดกลุ่ม/นัด visit */
+export async function getWinners(): Promise<CandidateDTO[]> {
+  const rows = await prisma.candidate.findMany({
+    where: { round2Result: "PASS" },
+    orderBy: [{ finalGroup: "asc" }, { name: "asc" }],
     include: { interviewSlot: true },
   });
   return rows.map(toCandidateDTO);

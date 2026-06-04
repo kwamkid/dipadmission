@@ -58,6 +58,12 @@ model Candidate {
   itvScore7 Int? // ทักษะ digital
   itvNotes  String? // โน้ตจากการสัมภาษณ์
 
+  // ----- จัดกลุ่มจริง + นัด visit (เฉพาะผู้ผ่าน Final) -----
+  finalGroup Int? // กลุ่มเรียนจริงที่จัดให้: 1 = พุธ, 2 = จันทร์
+  visitCoach String? // โค้ชที่ไป 1st visit (อ.แอม / อ.มิ้น / อ.เอ็ม)
+  // i-industry จริง = ใช้ field iindustryReg เดิม
+  // วันนัด 1st visit จริง = ใช้ field consultDate เดิม (@db.Date)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -60,3 +60,6 @@ export const TRAINING_GROUPS: Record<number, { name: string; dates: string }> = 
   1: { name: "กลุ่ม 1 (ทุกวันพุธ)", dates: "24 มิ.ย. / 1 ก.ค. / 8 ก.ค. / 15 ก.ค." },
   2: { name: "กลุ่ม 2 (ทุกวันจันทร์)", dates: "6 ก.ค. / 13 ก.ค. / 20 ก.ค. / 27 ก.ค." },
 };
+
+// โค้ชที่ไป on-site 1st visit
+export const COACHES = ["อ.แอม", "อ.มิ้น", "อ.เอ็ม"] as const;

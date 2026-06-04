@@ -162,6 +162,35 @@ export async function saveInterview(
   }
 }
 
+/** จัดกลุ่มจริง + i-industry + นัด 1st visit (เฉพาะผู้ผ่าน Final) */
+export async function saveFinal(
+  id: string,
+  data: {
+    finalGroup?: number | null;
+    iindustryReg?: boolean;
+    consultDate?: string | null; // "YYYY-MM-DD" วันนัด visit
+    visitCoach?: string | null;
+  }
+): Promise<ActionResult> {
+  try {
+    await prisma.candidate.update({
+      where: { id },
+      data: {
+        ...(data.finalGroup !== undefined && { finalGroup: data.finalGroup }),
+        ...(data.iindustryReg !== undefined && { iindustryReg: data.iindustryReg }),
+        ...(data.consultDate !== undefined && {
+          consultDate: data.consultDate ? new Date(data.consultDate) : null,
+        }),
+        ...(data.visitCoach !== undefined && { visitCoach: data.visitCoach }),
+      },
+    });
+    revalidatePath("/final");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
 /** ตัดสินผลสัมภาษณ์ Round 3 — PASS = ได้เข้าร่วมโครงการ (15 คน) */
 export async function setRound2Result(id: string, result: Result): Promise<ActionResult> {
   try {

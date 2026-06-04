@@ -62,6 +62,10 @@ export interface CandidateDTO {
   itvScore6: number | null;
   itvScore7: number | null;
   itvNotes: string | null;
+
+  // จัดกลุ่มจริง + นัด visit
+  finalGroup: number | null;
+  visitCoach: string | null;
 }
 
 // เงื่อนไขที่ต้องครบ "ก่อนเลือกช่องวันสัมภาษณ์"
