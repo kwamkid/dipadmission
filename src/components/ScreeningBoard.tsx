@@ -2,9 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ClipboardList, Search, Phone, Check, X, ExternalLink, StickyNote, ClipboardCheck, Circle } from "lucide-react";
 import type { CandidateDTO, SlotDTO, Result } from "@/lib/types";
 import { checklistComplete } from "@/lib/types";
 import { TARGET_PASS, TOTAL_SLOTS } from "@/lib/slots";
+import { TABLE } from "@/lib/ui";
 import { setResult, setContactStatus, saveScreening } from "@/app/actions";
 import ScreeningPanel from "./ScreeningPanel";
 import TabNav from "./TabNav";
@@ -146,7 +148,7 @@ export default function ScreeningBoard({
     const text = passed.map((c) => `${c.name}\t${c.company ?? ""}`).join("\n");
     navigator.clipboard
       .writeText(text)
-      .then(() => alert(`คัดลอกรายชื่อผู้ผ่าน ${passed.length} คนแล้ว ✓\n(วางใน Google Sheet / Excel ได้เลย)`))
+      .then(() => alert(`คัดลอกรายชื่อผู้ผ่าน ${passed.length} คนแล้ว\n(วางใน Google Sheet / Excel ได้เลย)`))
       .catch(() => alert("คัดลอกไม่สำเร็จ — ลองใหม่อีกครั้ง"));
   }
 
@@ -155,7 +157,9 @@ export default function ScreeningBoard({
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
         <div className="mx-auto max-w-[1500px] px-5 py-4">
-          <h1 className="text-xl font-bold">📋 คัดกรองผู้สมัครเข้าโครงการ — รอบที่ 1 (Phone Screening)</h1>
+          <h1 className="flex items-center gap-2 text-xl font-bold">
+            <ClipboardList className="h-6 w-6" /> คัดกรองผู้สมัครเข้าโครงการ — รอบที่ 1 (Phone Screening)
+          </h1>
           <p className="mt-0.5 text-sm text-blue-100">
             โทรสัมภาษณ์ทีละคน · ผ่าน checklist แล้วจองช่องสัมภาษณ์ Online 4–5 มิ.ย. · เป้าหมายคัดเหลือ {TARGET_PASS} คน
           </p>
@@ -176,12 +180,15 @@ export default function ScreeningBoard({
 
         {/* Filters */}
         <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 ค้นหา ชื่อ / เบอร์ / บริษัท"
-            className="h-9 w-60 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500"
-          />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ค้นหา ชื่อ / เบอร์ / บริษัท"
+              className="h-9 w-60 rounded-lg border border-slate-300 pl-8 pr-3 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
           <Select
             value={statusFilter}
             onChange={(v) => setStatusFilter(v as StatusFilter)}
@@ -213,10 +220,10 @@ export default function ScreeningBoard({
           </label>
           <button
             onClick={copyPassed}
-            className="ml-auto flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
             title="คัดลอกชื่อ+กิจการของผู้ที่ผ่าน ไปวางใน Sheet/Excel ได้"
           >
-            📋 คัดลอกรายชื่อผู้ผ่าน ({stats.passed})
+            <ClipboardCheck className="h-3.5 w-3.5" /> คัดลอกรายชื่อผู้ผ่าน ({stats.passed})
           </button>
           <button
             onClick={() => setLive((v) => !v)}
@@ -245,10 +252,10 @@ export default function ScreeningBoard({
         </div>
 
         {/* Table — เฉพาะจอใหญ่ (md ขึ้นไป) */}
-        <div className="mt-2 hidden max-h-[calc(100vh-220px)] overflow-auto rounded-xl border border-slate-200 bg-white md:block">
-          <table className="w-full min-w-[1100px] text-base">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm font-semibold uppercase text-slate-500">
+        <div className={`mt-2 ${TABLE.tableWrapDesktop} ${TABLE.wrap}`}>
+          <table className={`min-w-[1100px] ${TABLE.table}`}>
+            <thead className={TABLE.thead}>
+              <tr className={TABLE.theadRow}>
                 <th className="px-3 py-2.5">สถานะ</th>
                 <th className="px-3 py-2.5">#</th>
                 <th className="px-3 py-2.5">ชื่อ</th>
@@ -334,7 +341,7 @@ export default function ScreeningBoard({
             className="w-full max-w-md rounded-xl bg-white p-5 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-base font-bold text-slate-800">✕ ไม่ผ่านการคัดกรอง</h3>
+            <h3 className="flex items-center gap-1.5 text-base font-bold text-slate-800"><X className="h-5 w-5 text-red-600" /> ไม่ผ่านการคัดกรอง</h3>
             <p className="mt-1 text-sm text-slate-500">
               {failModal.name} — ระบุเหตุผล (เว้นว่างได้)
             </p>
@@ -359,9 +366,9 @@ export default function ScreeningBoard({
               </button>
               <button
                 onClick={confirmFail}
-                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
               >
-                ✕ ยืนยันไม่ผ่าน
+                <X className="h-4 w-4" /> ยืนยันไม่ผ่าน
               </button>
             </div>
           </div>
@@ -442,8 +449,8 @@ function ChannelBadge({ name, href }: { name: string; href?: string | null }) {
   const cls = `whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${colors[name] ?? "bg-slate-100 text-slate-600"}`;
   if (href) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={`${cls} hover:underline`} title={href}>
-        {name} ↗
+      <a href={href} target="_blank" rel="noopener noreferrer" className={`${cls} inline-flex items-center gap-0.5 hover:underline`} title={href}>
+        {name} <ExternalLink className="h-3 w-3" />
       </a>
     );
   }
@@ -466,7 +473,7 @@ function MiniCheck({ ok, label }: { ok: boolean; label: string }) {
       }`}
       title={label}
     >
-      {ok ? "✓" : "○"} {label}
+      {ok ? <Check className="h-3 w-3" /> : <Circle className="h-3 w-3" />} {label}
     </span>
   );
 }
@@ -534,7 +541,7 @@ function Row({
             href={`tel:${c.phone}`}
             className="inline-flex items-center gap-1.5 text-base font-normal text-slate-700 hover:text-green-700 hover:underline"
           >
-            <span aria-hidden>📞</span>
+            <Phone className="h-3.5 w-3.5 text-slate-400" />
             {c.phone}
           </a>
         ) : (
@@ -585,29 +592,29 @@ function Row({
         <div className="flex flex-nowrap gap-1 whitespace-nowrap">
           <button
             onClick={onPass}
-            className={`rounded-md px-2 py-1 text-sm font-medium ${
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium ${
               c.result === "PASS"
                 ? "bg-green-600 text-white"
                 : "border border-green-300 text-green-700 hover:bg-green-50"
             }`}
           >
-            ✓ ผ่าน
+            <Check className="h-4 w-4" /> ผ่าน
           </button>
           <button
             onClick={onFail}
-            className={`rounded-md px-2 py-1 text-sm font-medium ${
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium ${
               c.result === "FAIL"
                 ? "bg-red-600 text-white"
                 : "border border-red-300 text-red-700 hover:bg-red-50"
             }`}
           >
-            ✕ ไม่ผ่าน
+            <X className="h-4 w-4" /> ไม่ผ่าน
           </button>
         </div>
         {/* เหตุผลที่ไม่ผ่าน — แสดงใต้ปุ่ม */}
         {c.result === "FAIL" && c.failReason && (
           <div className="mt-1 max-w-[220px] whitespace-pre-wrap text-xs leading-snug text-rose-600">
-            📝 {c.failReason}
+            <StickyNote className="mr-0.5 inline h-3.5 w-3.5 align-text-bottom" />{c.failReason}
           </div>
         )}
       </td>
@@ -652,7 +659,7 @@ function CandidateCard({ c, onOpen, onPass, onFail, onUnreachable }: { c: Candid
           href={`tel:${c.phone}`}
           className="mt-2 inline-flex items-center gap-1.5 text-base font-medium text-slate-700"
         >
-          📞 {c.phone}
+          <Phone className="h-4 w-4 text-slate-400" /> {c.phone}
         </a>
       )}
 
@@ -705,26 +712,26 @@ function CandidateCard({ c, onOpen, onPass, onFail, onUnreachable }: { c: Candid
       <div className="mt-3 flex gap-2">
         <button
           onClick={onPass}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
+          className={`inline-flex flex-1 items-center justify-center gap-1 rounded-md py-2 text-sm font-medium ${
             c.result === "PASS"
               ? "bg-green-600 text-white"
               : "border border-green-300 text-green-700"
           }`}
         >
-          ✓ ผ่าน
+          <Check className="h-4 w-4" /> ผ่าน
         </button>
         <button
           onClick={onFail}
-          className={`flex-1 rounded-md py-2 text-sm font-medium ${
+          className={`inline-flex flex-1 items-center justify-center gap-1 rounded-md py-2 text-sm font-medium ${
             c.result === "FAIL" ? "bg-red-600 text-white" : "border border-red-300 text-red-700"
           }`}
         >
-          ✕ ไม่ผ่าน
+          <X className="h-4 w-4" /> ไม่ผ่าน
         </button>
       </div>
       {c.result === "FAIL" && c.failReason && (
         <div className="mt-1 whitespace-pre-wrap text-xs leading-snug text-rose-600">
-          📝 {c.failReason}
+          <StickyNote className="mr-0.5 inline h-3.5 w-3.5 align-text-bottom" />{c.failReason}
         </div>
       )}
     </div>

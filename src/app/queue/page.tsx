@@ -1,3 +1,4 @@
+import { CalendarDays, Phone, FileSpreadsheet } from "lucide-react";
 import { getInterviewQueue } from "@/lib/data";
 import { INTERVIEW_DAYS, TOTAL_SLOTS } from "@/lib/slots";
 import { thaiWeekdayShort, thaiDateShort } from "@/lib/format";
@@ -33,15 +34,18 @@ export default async function QueuePage() {
         <div className="mx-auto max-w-[1500px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold">🗓️ สรุปคิวสัมภาษณ์ Online (4–5 มิ.ย.)</h1>
+              <h1 className="flex items-center gap-2 text-xl font-bold">
+                <CalendarDays className="h-6 w-6" /> สรุปคิวสัมภาษณ์ Online (4–5 มิ.ย.)
+              </h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 จองแล้ว {booked}/{TOTAL_SLOTS} ช่อง · ว่างเหลือ {TOTAL_SLOTS - booked} ช่อง
               </p>
             </div>
             <CopyButton
               text={copyText}
-              label={`📋 คัดลอกตารางคิว (${booked})`}
-              doneMessage={`คัดลอกตารางคิว ${booked} คิวแล้ว ✓\n(วางใน Google Sheet / Excel ได้เลย)`}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
+              label={`คัดลอกตารางคิว (${booked})`}
+              doneMessage={`คัดลอกตารางคิว ${booked} คิวแล้ว\n(วางใน Google Sheet / Excel ได้เลย)`}
             />
           </div>
           <TabNav active="queue" />
@@ -91,9 +95,9 @@ export default async function QueuePage() {
                             {c.phone && (
                               <a
                                 href={`tel:${c.phone}`}
-                                className="text-sm text-slate-600 hover:text-green-700 hover:underline"
+                                className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-green-700 hover:underline"
                               >
-                                📞 {c.phone}
+                                <Phone className="h-3.5 w-3.5 text-slate-400" /> {c.phone}
                               </a>
                             )}
                             {c.result === "PASS" && (

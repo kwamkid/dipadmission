@@ -9,6 +9,7 @@ import {
   interviewTotal,
   interviewComplete,
 } from "@/lib/interview";
+import { ChevronLeft, ChevronRight, X, Check, Phone, Link2, Globe, ExternalLink, DoorOpen, BarChart3, MessageCircle, StickyNote } from "lucide-react";
 import { TRAINING_GROUPS } from "@/lib/slots";
 import { saveInterview, setRound2Result } from "@/app/actions";
 
@@ -79,14 +80,14 @@ export default function InterviewPanel({
             </span>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={onPrev} disabled={!onPrev} className="rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40">
-              ← ก่อนหน้า
+            <button onClick={onPrev} disabled={!onPrev} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40">
+              <ChevronLeft className="h-4 w-4" /> ก่อนหน้า
             </button>
-            <button onClick={onNext} disabled={!onNext} className="rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40">
-              ถัดไป →
+            <button onClick={onNext} disabled={!onNext} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40">
+              ถัดไป <ChevronRight className="h-4 w-4" />
             </button>
-            <button onClick={onClose} className="ml-1 rounded-md px-2.5 py-1 text-sm text-slate-500 hover:bg-slate-200">
-              ✕
+            <button onClick={onClose} className="ml-1 rounded-md p-1.5 text-slate-500 hover:bg-slate-200">
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -114,8 +115,8 @@ export default function InterviewPanel({
               </div>
             )}
             {c.phone && (
-              <a href={`tel:${c.phone}`} className="ml-2 text-sm text-slate-600 hover:text-green-700 hover:underline">
-                📞 {c.phone}
+              <a href={`tel:${c.phone}`} className="ml-2 inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-green-700 hover:underline">
+                <Phone className="h-3.5 w-3.5 text-slate-400" /> {c.phone}
               </a>
             )}
 
@@ -129,13 +130,13 @@ export default function InterviewPanel({
             {(c.facebookUrl || c.website) && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {c.facebookUrl && (
-                  <a href={c.facebookUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                    📘 Facebook ↗
+                  <a href={c.facebookUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                    <Link2 className="h-3.5 w-3.5" /> Facebook <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
                 {c.website && (
-                  <a href={c.website} target="_blank" rel="noopener noreferrer" className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700">
-                    🌐 เว็บไซต์ ↗
+                  <a href={c.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <Globe className="h-3.5 w-3.5" /> เว็บไซต์ <ExternalLink className="h-3 w-3" />
                   </a>
                 )}
               </div>
@@ -169,7 +170,9 @@ export default function InterviewPanel({
                     }`}
                   >
                     <div className="flex items-center gap-1.5 font-semibold text-slate-700">
-                      <span className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"}`}>✓</span>
+                      <span className={`flex h-4 w-4 items-center justify-center rounded border ${on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"}`}>
+                        <Check className="h-3 w-3" />
+                      </span>
                       {TRAINING_GROUPS[g].name}
                     </div>
                     <div className="mt-0.5 text-slate-500">{TRAINING_GROUPS[g].dates}</div>
@@ -180,15 +183,17 @@ export default function InterviewPanel({
           </div>
 
           {/* Gate */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">🚪 ข้อ 1 — Gate (30%) · ต้อง “ได้” ครบ 4 ข้อ</h3>
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <DoorOpen className="h-4 w-4" /> ข้อ 1 — Gate (30%) · ต้อง “ได้” ครบ 4 ข้อ
+          </h3>
           {gate === false && (
             <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
               ตก Gate — ตามเกณฑ์ต้อง reject (ให้ “ไม่ผ่าน”)
             </div>
           )}
           {gate === true && (
-            <div className="mb-2 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
-              ✓ ผ่าน Gate ครบทั้ง 4 ข้อ
+            <div className="mb-2 inline-flex items-center gap-1 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
+              <Check className="h-4 w-4" /> ผ่าน Gate ครบทั้ง 4 ข้อ
             </div>
           )}
           <div className="space-y-1.5">
@@ -221,8 +226,8 @@ export default function InterviewPanel({
           </div>
 
           {/* เกณฑ์ให้คะแนน 2–7 — กดเลือกระดับที่ตรงกับคำตอบ (5=ดีสุด → 1=น้อยสุด) */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">
-            📊 ข้อ 2–7 — เลือกระดับที่ตรงที่สุด (70%)
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <BarChart3 className="h-4 w-4" /> ข้อ 2–7 — เลือกระดับที่ตรงที่สุด (70%)
           </h3>
           <div className="space-y-3">
             {CRITERIA.map((cr) => {
@@ -233,7 +238,9 @@ export default function InterviewPanel({
                     ข้อ {cr.no}. {cr.title}
                     <span className="ml-1 text-sm font-normal text-slate-400">({cr.weight}%)</span>
                   </div>
-                  <div className="mt-1 text-sm text-slate-500">💬 {cr.question}</div>
+                  <div className="mt-1 flex items-start gap-1.5 text-sm text-slate-500">
+                    <MessageCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {cr.question}
+                  </div>
                   <div className="mt-2 space-y-1">
                     {[5, 4, 3, 2, 1].map((n) => {
                       const on = v === n;
@@ -265,7 +272,9 @@ export default function InterviewPanel({
           </div>
 
           {/* โน้ต */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">📝 โน้ตการสัมภาษณ์</h3>
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <StickyNote className="h-4 w-4" /> โน้ตการสัมภาษณ์
+          </h3>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -279,8 +288,8 @@ export default function InterviewPanel({
         {/* footer: ผลตัดสิน */}
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className={done ? "font-medium text-green-600" : "text-slate-400"}>
-              {done ? "✓ ประเมินครบทุกข้อ" : "ยังประเมินไม่ครบ"}
+            <span className={`inline-flex items-center gap-1 ${done ? "font-medium text-green-600" : "text-slate-400"}`}>
+              {done ? <><Check className="h-3.5 w-3.5" /> ประเมินครบทุกข้อ</> : "ยังประเมินไม่ครบ"}
             </span>
             <span className="text-slate-500">คะแนนรวม <b className="text-slate-800">{total}</b>/100</span>
           </div>
@@ -293,7 +302,7 @@ export default function InterviewPanel({
                   : "border border-green-500 text-green-700 hover:bg-green-50"
               }`}
             >
-              ✓ เข้าร่วมโครงการ
+              <span className="inline-flex items-center justify-center gap-1"><Check className="h-4 w-4" /> เข้าร่วมโครงการ</span>
             </button>
             <button
               onClick={() => decide(c.round2Result === "FAIL" ? "PENDING" : "FAIL")}
@@ -303,7 +312,7 @@ export default function InterviewPanel({
                   : "border border-red-400 text-red-600 hover:bg-red-50"
               }`}
             >
-              ✕ ไม่ผ่าน
+              <span className="inline-flex items-center justify-center gap-1"><X className="h-4 w-4" /> ไม่ผ่าน</span>
             </button>
           </div>
         </div>

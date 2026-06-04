@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CandidateDTO, Result } from "@/lib/types";
+import { Mic, Trophy, FileSpreadsheet, Check, X, Pencil, BarChart3, CalendarDays, AlertTriangle } from "lucide-react";
 import { gateStatus, interviewTotal, interviewComplete, FINAL_TARGET } from "@/lib/interview";
 import { TRAINING_GROUPS } from "@/lib/slots";
+import { TABLE } from "@/lib/ui";
 import { setRound2Result } from "@/app/actions";
 import InterviewPanel from "./InterviewPanel";
 import TabNav from "./TabNav";
@@ -107,7 +109,9 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
         <div className="mx-auto max-w-[1500px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold">🎤 สัมภาษณ์คัดเลือก — รอบที่ 3 (Zoom)</h1>
+              <h1 className="flex items-center gap-2 text-xl font-bold">
+                <Mic className="h-6 w-6" /> สัมภาษณ์คัดเลือก — รอบที่ 3 (Zoom)
+              </h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 ให้คะแนนตาม Matrix · คัดเหลือ {FINAL_TARGET} กิจการ · เลือกแล้ว {stats.selected}/{FINAL_TARGET}
               </p>
@@ -115,13 +119,15 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
             <div className="flex shrink-0 flex-col gap-1.5">
               <CopyButton
                 text={copyText}
-                label={`📋 คัดลอกผู้เข้าร่วม (${stats.selected})`}
-                doneMessage={`คัดลอกผู้เข้าร่วม ${stats.selected} กิจการแล้ว ✓`}
+                icon={<Trophy className="h-4 w-4" />}
+                label={`คัดลอกผู้เข้าร่วม (${stats.selected})`}
+                doneMessage={`คัดลอกผู้เข้าร่วม ${stats.selected} กิจการแล้ว`}
               />
               <CopyButton
                 text={exportAll}
-                label="📊 คัดลอกผลทั้งหมด"
-                doneMessage={`คัดลอกผลสัมภาษณ์ทั้งหมด ${ranked.length} คนแล้ว ✓\n(วางใน Sheet/Excel แยกคอลัมน์ได้)`}
+                icon={<FileSpreadsheet className="h-4 w-4" />}
+                label="คัดลอกผลทั้งหมด"
+                doneMessage={`คัดลอกผลสัมภาษณ์ทั้งหมด ${ranked.length} คนแล้ว\n(วางใน Sheet/Excel แยกคอลัมน์ได้)`}
               />
             </div>
           </div>
@@ -143,10 +149,10 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
       <div className="mx-auto max-w-[1500px] px-5 pb-4">
 
         {/* ตาราง — จอใหญ่ */}
-        <div className="mt-4 hidden overflow-auto rounded-xl border border-slate-200 bg-white md:block">
-          <table className="w-full min-w-[900px] text-base">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm font-semibold uppercase text-slate-500">
+        <div className={`mt-4 ${TABLE.tableWrapDesktop} ${TABLE.wrap}`}>
+          <table className={`min-w-[900px] ${TABLE.table}`}>
+            <thead className={TABLE.thead}>
+              <tr className={TABLE.theadRow}>
                 <th className="px-3 py-2.5">อันดับ</th>
                 <th className="px-3 py-2.5">ชื่อ / กิจการ</th>
                 <th className="px-3 py-2.5">คิว</th>
@@ -242,11 +248,11 @@ function ScoreButton({ c, onOpen }: { c: CandidateDTO; onOpen: () => void }) {
   return (
     <button
       onClick={onOpen}
-      className={`mt-1 rounded-md px-2 py-1 text-xs font-medium ${
+      className={`mt-1 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium ${
         started ? "border border-blue-300 text-blue-700 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"
       }`}
     >
-      {started ? `✏️ แก้คะแนน (${scored}/6)` : "📊 ให้คะแนน"}
+      {started ? <><Pencil className="h-3 w-3" /> แก้คะแนน ({scored}/6)</> : <><BarChart3 className="h-3.5 w-3.5" /> ให้คะแนน</>}
     </button>
   );
 }
@@ -256,19 +262,19 @@ function ResultButtons({ c, onPass, onFail }: { c: CandidateDTO; onPass: () => v
     <div className="flex flex-nowrap gap-1 whitespace-nowrap">
       <button
         onClick={onPass}
-        className={`rounded-md px-2 py-1 text-sm font-medium ${
+        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium ${
           c.round2Result === "PASS" ? "bg-green-600 text-white" : "border border-green-300 text-green-700 hover:bg-green-50"
         }`}
       >
-        ✓ เข้าร่วม
+        <Check className="h-4 w-4" /> เข้าร่วม
       </button>
       <button
         onClick={onFail}
-        className={`rounded-md px-2 py-1 text-sm font-medium ${
+        className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium ${
           c.round2Result === "FAIL" ? "bg-red-600 text-white" : "border border-red-300 text-red-700 hover:bg-red-50"
         }`}
       >
-        ✕ ไม่ผ่าน
+        <X className="h-4 w-4" /> ไม่ผ่าน
       </button>
     </div>
   );
@@ -364,10 +370,14 @@ function TrainingSummary({ winners }: { winners: CandidateDTO[] }) {
   return (
     <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-bold text-slate-700">
-          📅 สรุปกลุ่มอบรม (ผู้ชนะ {winners.length}/{FINAL_TARGET})
+        <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+          <CalendarDays className="h-4 w-4" /> สรุปกลุ่มอบรม (ผู้ชนะ {winners.length}/{FINAL_TARGET})
         </h3>
-        {none > 0 && <span className="text-xs font-medium text-amber-600">⚠ ยังไม่เลือกกลุ่ม {none} คน</span>}
+        {none > 0 && (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+            <AlertTriangle className="h-3.5 w-3.5" /> ยังไม่เลือกกลุ่ม {none} คน
+          </span>
+        )}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <GroupBar name={TRAINING_GROUPS[1].name} dates={TRAINING_GROUPS[1].dates} count={g1} cap={CAP} />
@@ -388,8 +398,8 @@ function GroupBar({ name, dates, count, cap }: { name: string; dates: string; co
     <div className="rounded-lg border border-slate-200 p-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-semibold text-slate-700">{name}</span>
-        <span className={`text-sm font-bold ${full ? "text-green-600" : "text-slate-700"}`}>
-          {count}/{cap} {full ? "✓ ครบ" : ""}
+        <span className={`inline-flex items-center gap-1 text-sm font-bold ${full ? "text-green-600" : "text-slate-700"}`}>
+          {count}/{cap} {full && <><Check className="h-3.5 w-3.5" /> ครบ</>}
         </span>
       </div>
       <div className="mt-0.5 text-xs text-slate-400">{dates}</div>

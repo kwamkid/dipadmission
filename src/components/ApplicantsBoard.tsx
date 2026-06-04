@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Users, Search, Phone, ExternalLink, Image as ImageIcon, X, FileSpreadsheet } from "lucide-react";
 import type { LeadDTO, LeadStatus } from "@/lib/types";
+import { TABLE } from "@/lib/ui";
 import TabNav from "./TabNav";
 import CopyButton from "./CopyButton";
+
+const isUrl = (v: unknown): v is string => typeof v === "string" && /^https?:\/\//i.test(v);
 
 // ทุกช่องของผู้สมัคร (ใช้ทั้ง export และหน้ารายละเอียด)
 const FIELDS: { key: keyof LeadDTO; label: string }[] = [
@@ -50,6 +54,14 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [detail, setDetail] = useState<LeadDTO | null>(null);
 
+  // กด Esc ปิด modal รายละเอียด
+  useEffect(() => {
+    if (!detail) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDetail(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [detail]);
+
   const counts = useMemo(() => {
     const c = { round1: 0, round30: 0, winner: 0 };
     for (const l of leads) {
@@ -85,15 +97,18 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
         <div className="mx-auto max-w-[1500px] px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold">👥 ผู้สมัครทั้งหมด</h1>
+              <h1 className="flex items-center gap-2 text-xl font-bold">
+                <Users className="h-6 w-6" /> ผู้สมัครทั้งหมด
+              </h1>
               <p className="mt-0.5 text-sm text-blue-100">
                 ทั้งหมด {leads.length} ราย · รอบแรก {counts.round1} · เข้าสัมภาษณ์ {counts.round30} · ผู้ชนะ {counts.winner}
               </p>
             </div>
             <CopyButton
               text={exportText}
-              label={`📊 คัดลอกทุกช่อง (${filtered.length})`}
-              doneMessage={`คัดลอก ${filtered.length} ราย (ทุกช่อง) แล้ว ✓\n(วางใน Sheet/Excel แยกคอลัมน์ได้)`}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
+              label={`คัดลอกทุกช่อง (${filtered.length})`}
+              doneMessage={`คัดลอก ${filtered.length} ราย (ทุกช่อง) แล้ว\n(วางใน Sheet/Excel แยกคอลัมน์ได้)`}
             />
           </div>
           <TabNav active="applicants" />
@@ -103,12 +118,15 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
       <div className="mx-auto max-w-[1500px] px-5 py-4">
         {/* filter */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 ค้นหา ชื่อ / บริษัท / เบอร์ / สินค้า"
-            className="h-9 w-64 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-blue-500"
-          />
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="ค้นหา ชื่อ / บริษัท / เบอร์ / สินค้า"
+              className="h-9 w-64 rounded-lg border border-slate-300 pl-8 pr-3 text-sm outline-none focus:border-blue-500"
+            />
+          </div>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as StatusFilter)}
@@ -124,10 +142,10 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
         </div>
 
         {/* ตาราง — จอใหญ่ */}
-        <div className="mt-3 hidden max-h-[calc(100vh-240px)] overflow-auto rounded-xl border border-slate-200 bg-white md:block">
-          <table className="w-full min-w-[1100px] text-sm">
-            <thead className="sticky top-0 z-10">
-              <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+        <div className={`mt-3 ${TABLE.tableWrapDesktop} ${TABLE.wrap}`}>
+          <table className={`min-w-[1100px] ${TABLE.table}`}>
+            <thead className={TABLE.thead}>
+              <tr className={TABLE.theadRow}>
                 <th className="px-3 py-2.5">#</th>
                 <th className="px-3 py-2.5">สถานะ</th>
                 <th className="px-3 py-2.5">ชื่อ-สกุล</th>
@@ -159,13 +177,21 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
                   </td>
                   <td className="px-3 py-2.5 text-xs text-slate-500"><div className="max-w-[140px]">{l.channels ?? "-"}</div></td>
                   <td className="px-3 py-2.5">
-                    {l.phone ? <a href={`tel:${l.phoneNorm ?? l.phone}`} className="text-slate-700 hover:underline">📞 {l.phoneNorm ?? l.phone}</a> : "-"}
+                    {l.phone ? (
+                      <a href={`tel:${l.phoneNorm ?? l.phone}`} className="inline-flex items-center gap-1.5 text-slate-700 hover:underline">
+                        <Phone className="h-3.5 w-3.5 text-slate-400" /> {l.phoneNorm ?? l.phone}
+                      </a>
+                    ) : "-"}
                   </td>
                   <td className="px-3 py-2.5 text-xs text-slate-500"><div className="max-w-[120px]">{l.revenue ?? "-"}</div></td>
                   <td className="px-3 py-2.5">
-                    {l.productImage ? (
-                      <a href={l.productImage} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">รูป ↗</a>
-                    ) : "-"}
+                    {isUrl(l.productImage) ? (
+                      <a href={l.productImage} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                        <ImageIcon className="h-3.5 w-3.5" /> ดู
+                      </a>
+                    ) : (
+                      <span className="text-xs text-slate-300">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-2.5">
                     <button onClick={() => setDetail(l)} className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
@@ -191,7 +217,11 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
               </div>
               <div className="text-sm text-slate-600">{l.company ?? "-"}</div>
               <div className="text-xs text-slate-400">{[l.area, l.businessType, l.mainProduct].filter(Boolean).join(" · ")}</div>
-              {l.phone && <div className="mt-1 text-sm text-slate-600">📞 {l.phoneNorm ?? l.phone}</div>}
+              {l.phone && (
+                <div className="mt-1 inline-flex items-center gap-1.5 text-sm text-slate-600">
+                  <Phone className="h-3.5 w-3.5 text-slate-400" /> {l.phoneNorm ?? l.phone}
+                </div>
+              )}
             </button>
           ))}
           {filtered.length === 0 && <div className="rounded-xl border border-slate-200 bg-white px-3 py-12 text-center text-slate-400">ไม่พบรายการ</div>}
@@ -207,19 +237,22 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
                 {[detail.prefix, detail.firstName, detail.lastName].filter(Boolean).join(" ")}
                 <span className="ml-2"><StatusBadge status={detail.status} /></span>
               </h3>
-              <button onClick={() => setDetail(null)} className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100">✕</button>
+              <button onClick={() => setDetail(null)} className="rounded-md p-1 text-slate-500 hover:bg-slate-100">
+                <X className="h-5 w-5" />
+              </button>
             </div>
             <div className="space-y-2">
               {FIELDS.map((f) => {
                 const v = detail[f.key];
                 if (v == null || v === "") return null;
-                const isLink = typeof v === "string" && /^https?:\/\//i.test(v);
                 return (
                   <div key={String(f.key)} className="grid grid-cols-[160px_1fr] gap-2 border-b border-slate-100 pb-2 text-sm">
                     <div className="text-slate-400">{f.label}</div>
                     <div className="text-slate-700">
-                      {isLink ? (
-                        <a href={String(v)} target="_blank" rel="noopener noreferrer" className="break-all text-blue-600 hover:underline">{String(v)} ↗</a>
+                      {isUrl(v) ? (
+                        <a href={String(v)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all text-blue-600 hover:underline">
+                          {String(v)} <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                        </a>
                       ) : (
                         <span className="whitespace-pre-wrap">{String(v)}</span>
                       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { ChevronLeft, ChevronRight, X, Check, Phone, Link2, Globe, ExternalLink, CalendarDays, StickyNote } from "lucide-react";
 import type { CandidateDTO, SlotDTO } from "@/lib/types";
 import { checklistComplete, canBookSlot, missingForBooking } from "@/lib/types";
 import { INTERVIEW_DAYS, TRAINING_GROUPS } from "@/lib/slots";
@@ -96,19 +97,19 @@ export default function ScreeningPanel({
             <button
               onClick={onPrev}
               disabled={!onPrev}
-              className="rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40"
+              className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40"
             >
-              ← ก่อนหน้า
+              <ChevronLeft className="h-4 w-4" /> ก่อนหน้า
             </button>
             <button
               onClick={onNext}
               disabled={!onNext}
-              className="rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40"
+              className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1 text-sm disabled:opacity-40"
             >
-              ถัดไป →
+              ถัดไป <ChevronRight className="h-4 w-4" />
             </button>
-            <button onClick={onClose} className="ml-1 rounded-md px-2.5 py-1 text-sm text-slate-500 hover:bg-slate-200">
-              ✕
+            <button onClick={onClose} className="ml-1 rounded-md p-1.5 text-slate-500 hover:bg-slate-200">
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -153,7 +154,7 @@ export default function ScreeningPanel({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100"
                   >
-                    📘 เพจ Facebook ↗
+                    <Link2 className="h-4 w-4" /> เพจ Facebook <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 )}
                 {c.website && (
@@ -163,7 +164,7 @@ export default function ScreeningPanel({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
-                    🌐 เว็บไซต์ ↗
+                    <Globe className="h-4 w-4" /> เว็บไซต์ <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 )}
               </div>
@@ -174,7 +175,7 @@ export default function ScreeningPanel({
                 href={`tel:${c.phone}`}
                 className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-green-600 py-2.5 text-sm font-semibold text-white"
               >
-                📞 โทรหา {c.phone}
+                <Phone className="h-4 w-4" /> โทรหา {c.phone}
               </a>
             )}
 
@@ -208,8 +209,8 @@ export default function ScreeningPanel({
           </div>
 
           {/* CHECKLIST */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">
-            ✅ Checklist เงื่อนไขเข้ารอบสัมภาษณ์
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <Check className="h-4 w-4" /> Checklist เงื่อนไขเข้ารอบสัมภาษณ์
           </h3>
 
           {/* 1. notebook (จำเป็น) */}
@@ -253,11 +254,11 @@ export default function ScreeningPanel({
                   >
                     <div className="flex items-center gap-1.5 font-semibold text-slate-700">
                       <span
-                        className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                        className={`flex h-4 w-4 items-center justify-center rounded border ${
                           on ? "border-blue-600 bg-blue-600 text-white" : "border-slate-300 text-transparent"
                         }`}
                       >
-                        ✓
+                        <Check className="h-3 w-3" />
                       </span>
                       {TRAINING_GROUPS[g].name}
                     </div>
@@ -289,8 +290,8 @@ export default function ScreeningPanel({
           </div>
 
           {/* 2. จองช่องสัมภาษณ์ */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">
-            🗓️ จองช่องสัมภาษณ์ Online (4–5 มิ.ย.)
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <CalendarDays className="h-4 w-4" /> จองช่องสัมภาษณ์ Online (4–5 มิ.ย.)
           </h3>
           {!canBookSlot(c) && (
             <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
@@ -305,7 +306,9 @@ export default function ScreeningPanel({
           />
 
           {/* notes */}
-          <h3 className="mt-5 mb-2 text-sm font-bold text-slate-700">📝 บันทึกเพิ่มเติม</h3>
+          <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
+            <StickyNote className="h-4 w-4" /> บันทึกเพิ่มเติม
+          </h3>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -319,8 +322,8 @@ export default function ScreeningPanel({
         {/* footer: ผลคัด */}
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3">
           <div className="mb-2 flex items-center justify-between text-xs">
-            <span className={ready ? "font-medium text-green-600" : "text-slate-400"}>
-              {ready ? "✓ checklist ครบทุกข้อ" : "checklist ยังไม่ครบ"}
+            <span className={`inline-flex items-center gap-1 ${ready ? "font-medium text-green-600" : "text-slate-400"}`}>
+              {ready ? <><Check className="h-3.5 w-3.5" /> checklist ครบทุกข้อ</> : "checklist ยังไม่ครบ"}
             </span>
             <span className="text-slate-500">{c.interviewSlotLabel ?? "ยังไม่จองช่อง"}</span>
           </div>
@@ -334,7 +337,7 @@ export default function ScreeningPanel({
                   : "border border-green-500 text-green-700 hover:bg-green-50"
               }`}
             >
-              ✓ ผ่านเข้ารอบสัมภาษณ์
+              <span className="inline-flex items-center justify-center gap-1"><Check className="h-4 w-4" /> ผ่านเข้ารอบสัมภาษณ์</span>
             </button>
             <button
               onClick={() => decide(c.result === "FAIL" ? "PENDING" : "FAIL")}
@@ -344,7 +347,7 @@ export default function ScreeningPanel({
                   : "border border-red-400 text-red-600 hover:bg-red-50"
               }`}
             >
-              ✕ ไม่ผ่าน
+              <span className="inline-flex items-center justify-center gap-1"><X className="h-4 w-4" /> ไม่ผ่าน</span>
             </button>
           </div>
 
@@ -401,11 +404,11 @@ function ToggleCard({
       }`}
     >
       <span
-        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 text-sm ${
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 ${
           checked ? "border-green-600 bg-green-600 text-white" : "border-slate-300 text-transparent"
         }`}
       >
-        ✓
+        <Check className="h-4 w-4" />
       </span>
       <span>
         <span className="text-sm font-medium text-slate-700">
