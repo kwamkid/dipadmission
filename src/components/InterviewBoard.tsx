@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CandidateDTO, Result } from "@/lib/types";
-import { Mic, Trophy, FileSpreadsheet, Check, X, Pencil, BarChart3, CalendarDays, AlertTriangle } from "lucide-react";
+import { Mic, Trophy, FileSpreadsheet, Check, X, Pencil, BarChart3, CalendarDays, AlertTriangle, Phone } from "lucide-react";
 import { gateStatus, interviewTotal, interviewComplete, FINAL_TARGET } from "@/lib/interview";
 import { TRAINING_GROUPS } from "@/lib/slots";
 import { TABLE } from "@/lib/ui";
@@ -307,6 +307,11 @@ function ItvRow({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: nu
           {c.name}
         </button>
         <div className="text-sm text-slate-400">{c.company ?? "-"}</div>
+        {c.phone && (
+          <a href={`tel:${c.phone}`} className="mt-0.5 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-green-700 hover:underline">
+            <Phone className="h-3.5 w-3.5 text-slate-400" /> {c.phone}
+          </a>
+        )}
       </td>
       <td className="px-3 py-2.5">
         <span className="inline-block whitespace-pre-line text-xs leading-tight text-violet-700">
@@ -340,6 +345,11 @@ function ItvCard({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: n
             {c.name}
           </div>
           <div className="text-xs text-slate-500">{c.company ?? "-"}</div>
+          {c.phone && (
+            <div className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500">
+              <Phone className="h-3 w-3 text-slate-400" /> {c.phone}
+            </div>
+          )}
         </button>
         <div className="text-right">
           <div className="text-lg font-bold text-slate-800">

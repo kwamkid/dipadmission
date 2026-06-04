@@ -88,5 +88,5 @@ export function missingForBooking(c: CandidateDTO): string[] {
 // เงื่อนไขที่ "ครบ checklist" (เกณฑ์ผ่านเชิงข้อมูล)
 // notebook = จำเป็น (ถ้าไม่มี → ผ่านไม่ได้)
 export function checklistComplete(c: CandidateDTO): boolean {
-  return canBookSlot(c) && c.interviewSlotId !== null && c.iindustryReg;
+  return canBookSlot(c) && c.interviewSlotId !== null;
 }

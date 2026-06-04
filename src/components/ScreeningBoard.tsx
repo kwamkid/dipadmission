@@ -574,7 +574,6 @@ function Row({
             label={c.trainingGroups.length ? `กลุ่ม${c.trainingGroups.join(",")}` : "กลุ่ม"}
           />
           <MiniCheck ok={c.visitAvailable} label="visit" />
-          <MiniCheck ok={c.iindustryReg} label="i-industry" />
         </div>
       </td>
       <td className="px-3 py-2.5">
@@ -689,7 +688,6 @@ function CandidateCard({ c, onOpen, onPass, onFail, onUnreachable }: { c: Candid
           label={c.trainingGroups.length ? `กลุ่ม${c.trainingGroups.join(",")}` : "กลุ่ม"}
         />
         <MiniCheck ok={c.visitAvailable} label="visit" />
-        <MiniCheck ok={c.iindustryReg} label="i-industry" />
       </div>
 
       {/* จองเวลา */}

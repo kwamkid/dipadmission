@@ -269,25 +269,13 @@ export default function ScreeningPanel({
             </div>
           </div>
 
-          {/* 5. นัด visit (แค่ติ๊กว่าสะดวก) + i-industry */}
+          {/* 5. นัด visit (แค่ติ๊กว่าสะดวก) */}
           <ToggleCard
             checked={c.visitAvailable}
             onToggle={() => save({ visitAvailable: !c.visitAvailable })}
             title="สะดวกให้นัด visit กิจการครั้งแรก"
             hint="ช่วง 12–23 มิ.ย. (ยังไม่ต้องเลือกวัน ค่อยนัดวันจริงทีหลัง)"
           />
-
-          <div className="mt-2 rounded-xl border border-slate-200 p-3">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={c.iindustryReg}
-                onChange={() => save({ iindustryReg: !c.iindustryReg })}
-                className="h-4 w-4 accent-blue-600"
-              />
-              ลงทะเบียน i-industry แล้ว (ก่อน 23 มิ.ย.)
-            </label>
-          </div>
 
           {/* 2. จองช่องสัมภาษณ์ */}
           <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
