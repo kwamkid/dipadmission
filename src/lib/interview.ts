@@ -11,7 +11,7 @@ export const GATE_ITEMS: { key: GateKey; label: string }[] = [
   { key: "itvGate1a", label: "มาพิธีเปิด 11 มิ.ย. 2569 (09:00) ผ่าน Zoom ได้" },
   { key: "itvGate1b", label: "เข้า Group Sessions ×4 ครั้ง (มิ.ย.–ก.ค.) ได้" },
   { key: "itvGate1c", label: "รับ On-site Visit ×5 ครั้ง (มิ.ย.–ก.ค.) ได้" },
-  { key: "itvGate1d", label: "ลงทะเบียน i-industry ภายใน 23 มิ.ย. ได้" },
+  // i-industry (1d) เอาออกชั่วคราว — field ยังอยู่ใน schema เผื่อกลับมาใช้
 ];
 
 export type GateKey = "itvGate1a" | "itvGate1b" | "itvGate1c" | "itvGate1d";

@@ -184,7 +184,7 @@ export default function InterviewPanel({
 
           {/* Gate */}
           <h3 className="mt-5 mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-700">
-            <DoorOpen className="h-4 w-4" /> ข้อ 1 — Gate (30%) · ต้อง “ได้” ครบ 4 ข้อ
+            <DoorOpen className="h-4 w-4" /> ข้อ 1 — Gate (30%) · ต้อง “ได้” ครบ {GATE_ITEMS.length} ข้อ
           </h3>
           {gate === false && (
             <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
@@ -193,7 +193,7 @@ export default function InterviewPanel({
           )}
           {gate === true && (
             <div className="mb-2 inline-flex items-center gap-1 rounded-lg bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
-              <Check className="h-4 w-4" /> ผ่าน Gate ครบทั้ง 4 ข้อ
+              <Check className="h-4 w-4" /> ผ่าน Gate ครบทั้ง {GATE_ITEMS.length} ข้อ
             </div>
           )}
           <div className="space-y-1.5">
