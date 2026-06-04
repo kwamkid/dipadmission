@@ -58,6 +58,7 @@ function toCandidateDTO(c: CandidateRow): CandidateDTO {
     itvNotes: c.itvNotes,
     finalGroup: c.finalGroup,
     visitCoach: c.visitCoach,
+    visitLocation: c.visitLocation,
   };
 }
 

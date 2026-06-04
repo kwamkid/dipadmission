@@ -170,6 +170,7 @@ export async function saveFinal(
     iindustryReg?: boolean;
     consultDate?: string | null; // "YYYY-MM-DD" วันนัด visit
     visitCoach?: string | null;
+    visitLocation?: string | null;
   }
 ): Promise<ActionResult> {
   try {
@@ -182,6 +183,7 @@ export async function saveFinal(
           consultDate: data.consultDate ? new Date(data.consultDate) : null,
         }),
         ...(data.visitCoach !== undefined && { visitCoach: data.visitCoach }),
+        ...(data.visitLocation !== undefined && { visitLocation: data.visitLocation }),
       },
     });
     revalidatePath("/final");

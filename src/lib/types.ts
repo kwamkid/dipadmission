@@ -66,6 +66,7 @@ export interface CandidateDTO {
   // จัดกลุ่มจริง + นัด visit
   finalGroup: number | null;
   visitCoach: string | null;
+  visitLocation: string | null;
 }
 
 // เงื่อนไขที่ต้องครบ "ก่อนเลือกช่องวันสัมภาษณ์"
