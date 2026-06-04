@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "import": "tsx scripts/import-candidates.ts"
+    "import": "tsx scripts/import-candidates.ts",
+    "import:leads": "tsx scripts/import-leads.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",

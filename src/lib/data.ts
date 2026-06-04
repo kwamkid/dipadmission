@@ -2,7 +2,7 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { toIsoDate, slotLabelLines } from "./format";
-import type { CandidateDTO, SlotDTO, ContactStatus, Result } from "./types";
+import type { CandidateDTO, SlotDTO, ContactStatus, Result, LeadDTO, LeadStatus } from "./types";
 
 type CandidateRow = Prisma.CandidateGetPayload<{ include: { interviewSlot: true } }>;
 
@@ -135,4 +135,24 @@ export async function getInterviewees(): Promise<CandidateDTO[]> {
     include: { interviewSlot: true },
   });
   return rows.map(toCandidateDTO);
+}
+
+/** ผู้สมัครทั้งหมด (lead) + สถานะในกระบวนการ (จับคู่กับ candidate ด้วยเบอร์) */
+export async function getLeads(): Promise<LeadDTO[]> {
+  const [leads, cands] = await Promise.all([
+    prisma.lead.findMany({ orderBy: { seq: "asc" } }),
+    prisma.candidate.findMany({ select: { phone: true, result: true, round2Result: true } }),
+  ]);
+  const byPhone = new Map<string, { result: Result; round2Result: Result }>();
+  for (const c of cands) {
+    if (c.phone) byPhone.set(c.phone, { result: c.result as Result, round2Result: c.round2Result as Result });
+  }
+  return leads.map((l) => {
+    const m = l.phoneNorm ? byPhone.get(l.phoneNorm) : undefined;
+    let status: LeadStatus = "applicant";
+    if (m) status = m.round2Result === "PASS" ? "winner" : m.result === "PASS" ? "round30" : "round1";
+    const { createdAt: _omit, ...rest } = l;
+    void _omit;
+    return { ...rest, status };
+  });
 }

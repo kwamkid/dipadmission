@@ -79,6 +79,44 @@ model InterviewSlot {
   @@index([day])
 }
 
+/// ผู้สมัครทั้งหมด (raw จาก lead.csv) — เก็บครบทุกช่องสำหรับ export
+model Lead {
+  id            String  @id @default(cuid())
+  seq           Int? // ลำดับแถวจากไฟล์
+  submittedAt   String? // ส่งเมื่อ
+  prefix        String? // คำนำหน้าชื่อ
+  firstName     String? // ชื่อ
+  lastName      String? // นามสกุล
+  idCard        String? // เลขบัตรประชาชน
+  birthDate     String? // วันเกิด
+  phone         String? // หมายเลขโทรศัพท์มือถือ (ตามไฟล์)
+  phoneNorm     String? // เบอร์ปกติ 0xxx (ใช้ match กับ candidate)
+  email         String?
+  address       String? // ที่อยู่
+  company       String? // ชื่อธุรกิจ/บริษัท
+  registrationNo String? // เลขทะเบียนนิติบุคคล/พาณิชย์
+  companyAddress String? // ที่อยู่บริษัท
+  area          String? // เขตพื้นที่/จังหวัด
+  businessType  String? // ประเภทธุรกิจ
+  mainProduct   String? // สินค้า/บริการหลัก
+  businessAbout String? // ทำธุรกิจเกี่ยวกับ
+  channels      String? // ช่องทางจำหน่าย (ดิบ)
+  position      String? // ตำแหน่ง
+  department    String? // แผนก
+  revenue       String? // รายได้บริษัทต่อปี
+  businessSize  String? // ขนาดกิจการ
+  yearsOperating String? // ระยะเวลาดำเนินธุรกิจ
+  websiteReason String? // ทำไมธุรกิจต้องมีเว็บ
+  facebookUrl   String? // เพจ Facebook
+  website       String? // เว็บไซต์
+  consent       String? // การยินยอม
+  productImage  String? // ลิงก์ภาพถ่ายผลิตภัณฑ์/บริการ
+
+  createdAt DateTime @default(now())
+
+  @@index([phoneNorm])
+}
+
 enum ContactStatus {
   PENDING // ยังไม่ได้โทร
   CONTACTED // ติดต่อได้

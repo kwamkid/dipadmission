@@ -1,7 +1,12 @@
 // DTO ที่ส่งจาก server → client (serializable, แปลง Date เป็น string แล้ว)
+import type { Lead } from "@prisma/client";
 
 export type ContactStatus = "PENDING" | "CONTACTED" | "UNREACHABLE";
 export type Result = "PENDING" | "PASS" | "FAIL";
+
+// สถานะของผู้สมัครในกระบวนการ: ทั่วไป → รอบแรก → 30 (สัมภาษณ์) → 15 (ผู้ชนะ)
+export type LeadStatus = "applicant" | "round1" | "round30" | "winner";
+export type LeadDTO = Omit<Lead, "createdAt"> & { status: LeadStatus };
 
 export interface SlotDTO {
   id: string;

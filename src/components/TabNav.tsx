@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const TABS = [
+  { href: "/applicants", label: "👥 ผู้สมัครทั้งหมด", key: "applicants" },
   { href: "/screening", label: "📋 คัดกรอง", key: "screening" },
   { href: "/queue", label: "🗓️ คิวสัมภาษณ์", key: "queue" },
   { href: "/interview", label: "🎤 สัมภาษณ์", key: "interview" },
