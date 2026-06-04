@@ -1,51 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Users, Search, Phone, ExternalLink, Image as ImageIcon, X, FileSpreadsheet } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Users, Search, Phone, Image as ImageIcon, FileSpreadsheet } from "lucide-react";
 import type { LeadDTO, LeadStatus } from "@/lib/types";
 import { TABLE } from "@/lib/ui";
 import TabNav from "./TabNav";
 import CopyButton from "./CopyButton";
-
-const isUrl = (v: unknown): v is string => typeof v === "string" && /^https?:\/\//i.test(v);
-
-// ทุกช่องของผู้สมัคร (ใช้ทั้ง export และหน้ารายละเอียด)
-const FIELDS: { key: keyof LeadDTO; label: string }[] = [
-  { key: "submittedAt", label: "ส่งเมื่อ" },
-  { key: "prefix", label: "คำนำหน้า" },
-  { key: "firstName", label: "ชื่อ" },
-  { key: "lastName", label: "นามสกุล" },
-  { key: "idCard", label: "เลขบัตรประชาชน" },
-  { key: "birthDate", label: "วันเกิด" },
-  { key: "phone", label: "เบอร์โทร" },
-  { key: "email", label: "อีเมล" },
-  { key: "address", label: "ที่อยู่" },
-  { key: "company", label: "ชื่อธุรกิจ/บริษัท" },
-  { key: "registrationNo", label: "เลขทะเบียนนิติบุคคล" },
-  { key: "companyAddress", label: "ที่อยู่บริษัท" },
-  { key: "area", label: "เขตพื้นที่/จังหวัด" },
-  { key: "businessType", label: "ประเภทธุรกิจ" },
-  { key: "mainProduct", label: "สินค้า/บริการหลัก" },
-  { key: "businessAbout", label: "ทำธุรกิจเกี่ยวกับ" },
-  { key: "channels", label: "ช่องทางจำหน่าย" },
-  { key: "position", label: "ตำแหน่ง" },
-  { key: "department", label: "แผนก" },
-  { key: "revenue", label: "รายได้ต่อปี" },
-  { key: "businessSize", label: "ขนาดกิจการ" },
-  { key: "yearsOperating", label: "ระยะเวลาดำเนินธุรกิจ" },
-  { key: "websiteReason", label: "ทำไมต้องมีเว็บไซต์" },
-  { key: "facebookUrl", label: "เพจ Facebook" },
-  { key: "website", label: "เว็บไซต์" },
-  { key: "consent", label: "การยินยอม" },
-  { key: "productImage", label: "ภาพถ่ายผลิตภัณฑ์/บริการ" },
-];
-
-const STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
-  applicant: { label: "ผู้สมัคร", cls: "bg-slate-100 text-slate-500" },
-  round1: { label: "รอบแรก", cls: "bg-blue-100 text-blue-700" },
-  round30: { label: "เข้าสัมภาษณ์ (30)", cls: "bg-violet-100 text-violet-700" },
-  winner: { label: "ผู้ชนะ (15)", cls: "bg-green-100 text-green-700" },
-};
+import LeadDetailModal, { LEAD_FIELDS as FIELDS, StatusBadge, statusLabel, isUrl } from "./LeadDetailModal";
 
 type StatusFilter = "ALL" | LeadStatus;
 
@@ -53,14 +14,6 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("ALL");
   const [detail, setDetail] = useState<LeadDTO | null>(null);
-
-  // กด Esc ปิด modal รายละเอียด
-  useEffect(() => {
-    if (!detail) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDetail(null);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [detail]);
 
   const counts = useMemo(() => {
     const c = { round1: 0, round30: 0, winner: 0 };
@@ -87,7 +40,7 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
   const exportText = [
     ["สถานะ", ...FIELDS.map((f) => f.label)].join("\t"),
     ...filtered.map((l) =>
-      [STATUS_META[l.status].label, ...FIELDS.map((f) => String(l[f.key] ?? "").replace(/[\t\n]/g, " "))].join("\t")
+      [statusLabel(l.status), ...FIELDS.map((f) => String(l[f.key] ?? "").replace(/[\t\n]/g, " "))].join("\t")
     ),
   ].join("\n");
 
@@ -229,46 +182,7 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
       </div>
 
       {/* รายละเอียดทุกช่อง */}
-      {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-slate-800">
-                {[detail.prefix, detail.firstName, detail.lastName].filter(Boolean).join(" ")}
-                <span className="ml-2"><StatusBadge status={detail.status} /></span>
-              </h3>
-              <button onClick={() => setDetail(null)} className="rounded-md p-1 text-slate-500 hover:bg-slate-100">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {FIELDS.map((f) => {
-                const v = detail[f.key];
-                if (v == null || v === "") return null;
-                return (
-                  <div key={String(f.key)} className="grid grid-cols-[160px_1fr] gap-2 border-b border-slate-100 pb-2 text-sm">
-                    <div className="text-slate-400">{f.label}</div>
-                    <div className="text-slate-700">
-                      {isUrl(v) ? (
-                        <a href={String(v)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 break-all text-blue-600 hover:underline">
-                          {String(v)} <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="whitespace-pre-wrap">{String(v)}</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
+      {detail && <LeadDetailModal lead={detail} onClose={() => setDetail(null)} />}
     </div>
   );
-}
-
-function StatusBadge({ status }: { status: LeadStatus }) {
-  const m = STATUS_META[status];
-  return <span className={`whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ${m.cls}`}>{m.label}</span>;
 }

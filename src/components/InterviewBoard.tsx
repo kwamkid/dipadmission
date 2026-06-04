@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { CandidateDTO, Result } from "@/lib/types";
+import type { CandidateDTO, Result, LeadDTO } from "@/lib/types";
 import { Mic, Trophy, FileSpreadsheet, Check, X, Pencil, BarChart3, CalendarDays, AlertTriangle, Phone } from "lucide-react";
 import { gateStatus, interviewTotal, interviewComplete, FINAL_TARGET } from "@/lib/interview";
 import { TRAINING_GROUPS } from "@/lib/slots";
@@ -12,7 +12,13 @@ import InterviewPanel from "./InterviewPanel";
 import TabNav from "./TabNav";
 import CopyButton from "./CopyButton";
 
-export default function InterviewBoard({ candidates }: { candidates: CandidateDTO[] }) {
+export default function InterviewBoard({
+  candidates,
+  leadByPhone,
+}: {
+  candidates: CandidateDTO[];
+  leadByPhone: Record<string, LeadDTO>;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -220,6 +226,7 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
       {selected && (
         <InterviewPanel
           candidate={selected}
+          lead={selected.phone ? leadByPhone[selected.phone] ?? null : null}
           rank={rankOf.get(selected.id) ?? null}
           position={{ index: selectedIndex, total: ranked.length }}
           onClose={() => setSelectedId(null)}

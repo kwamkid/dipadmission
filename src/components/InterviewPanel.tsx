@@ -9,12 +9,15 @@ import {
   interviewTotal,
   interviewComplete,
 } from "@/lib/interview";
-import { ChevronLeft, ChevronRight, X, Check, Phone, Link2, Globe, ExternalLink, DoorOpen, BarChart3, MessageCircle, StickyNote } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Check, Phone, Link2, Globe, ExternalLink, DoorOpen, BarChart3, MessageCircle, StickyNote, FileText } from "lucide-react";
+import type { LeadDTO } from "@/lib/types";
 import { TRAINING_GROUPS } from "@/lib/slots";
 import { saveInterview, setRound2Result } from "@/app/actions";
+import LeadDetailModal from "./LeadDetailModal";
 
 export default function InterviewPanel({
   candidate,
+  lead,
   position,
   rank,
   onClose,
@@ -24,6 +27,7 @@ export default function InterviewPanel({
   onOptimistic,
 }: {
   candidate: CandidateDTO;
+  lead: LeadDTO | null;
   position: { index: number; total: number };
   rank: number | null;
   onClose: () => void;
@@ -34,6 +38,7 @@ export default function InterviewPanel({
 }) {
   const c = candidate;
   const [notes, setNotes] = useState(candidate.itvNotes ?? "");
+  const [showDetail, setShowDetail] = useState(false);
   const [, startTransition] = useTransition();
 
   useEffect(() => {
@@ -146,6 +151,14 @@ export default function InterviewPanel({
                 <div className="mb-1 text-xs font-semibold text-amber-700">เหตุผลที่สมัคร</div>
                 {c.reason}
               </div>
+            )}
+            {lead && (
+              <button
+                onClick={() => setShowDetail(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                <FileText className="h-4 w-4" /> ดูรายละเอียดทั้งหมด
+              </button>
             )}
           </div>
 
@@ -317,6 +330,8 @@ export default function InterviewPanel({
           </div>
         </div>
       </aside>
+
+      {showDetail && lead && <LeadDetailModal lead={lead} onClose={() => setShowDetail(false)} />}
     </>
   );
 }
