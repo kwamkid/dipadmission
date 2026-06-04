@@ -80,23 +80,32 @@ export default function InterviewBoard({
     });
   }
 
+  // ข้อมูลส่วนตัวเพิ่มเติม (อีเมลจาก Lead, เวลานัดจาก slot)
+  const emailOf = (c: CandidateDTO) => (c.phone ? leadByPhone[c.phone]?.email ?? "" : "");
+  const slotOf = (c: CandidateDTO) => (c.interviewSlotLabel ?? "").replace(/\n/g, " ");
+
   // คัดลอกผู้ที่เข้าร่วม (เรียงตามอันดับ)
   const copyText = [
-    ["อันดับ", "คะแนน", "ชื่อ", "กิจการ"].join("\t"),
+    ["อันดับ", "ชื่อ", "กิจการ", "เบอร์", "อีเมล", "เวลานัด", "คะแนน"].join("\t"),
     ...ranked
       .filter((c) => c.round2Result === "PASS")
-      .map((c) => [rankOf.get(c.id) ?? "-", interviewTotal(c), c.name, c.company ?? ""].join("\t")),
+      .map((c) =>
+        [rankOf.get(c.id) ?? "-", c.name, c.company ?? "", c.phone ?? "", emailOf(c), slotOf(c), interviewTotal(c)].join("\t")
+      ),
   ].join("\n");
 
-  // คัดลอกผลทั้งหมด (ทุกคน + คะแนนแยกข้อ) — วาง Sheet/Excel แยกคอลัมน์ได้
+  // คัดลอกผลทั้งหมด (ทุกคน + ข้อมูลส่วนตัว + คะแนนแยกข้อ) — วาง Sheet/Excel แยกคอลัมน์ได้
   const exportAll = [
-    ["อันดับ", "ชื่อ", "กิจการ", "Gate", "ข้อ2", "ข้อ3", "ข้อ4", "ข้อ5", "ข้อ6", "ข้อ7", "คะแนนรวม", "ผล"].join("\t"),
+    ["อันดับ", "ชื่อ", "กิจการ", "เบอร์", "อีเมล", "เวลานัด", "Gate", "ข้อ2", "ข้อ3", "ข้อ4", "ข้อ5", "ข้อ6", "ข้อ7", "คะแนนรวม", "ผล"].join("\t"),
     ...ranked.map((c) => {
       const g = gateStatus(c);
       return [
         rankOf.get(c.id) ?? "-",
         c.name,
         c.company ?? "",
+        c.phone ?? "",
+        emailOf(c),
+        slotOf(c),
         g === true ? "ผ่าน" : g === false ? "ตก" : "-",
         c.itvScore2 ?? "",
         c.itvScore3 ?? "",
