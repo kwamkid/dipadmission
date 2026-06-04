@@ -54,8 +54,9 @@ export default function InterviewBoard({
     return { total: cands.length, done, selected };
   }, [cands]);
 
-  const selectedIndex = ranked.findIndex((c) => c.id === selectedId);
-  const selected = selectedIndex >= 0 ? ranked[selectedIndex] : null;
+  // แสดงผลเรียงตามคิวสัมภาษณ์ (ไม่เรียงตามคะแนน) — เลขอันดับยังคำนวณจากคะแนนไว้โชว์
+  const selectedIndex = cands.findIndex((c) => c.id === selectedId);
+  const selected = selectedIndex >= 0 ? cands[selectedIndex] : null;
 
   function refresh() {
     startTransition(() => router.refresh());
@@ -159,7 +160,7 @@ export default function InterviewBoard({
           <table className={`min-w-[900px] ${TABLE.table}`}>
             <thead className={TABLE.thead}>
               <tr className={TABLE.theadRow}>
-                <th className="px-3 py-2.5">อันดับ</th>
+                <th className="px-3 py-2.5">อันดับคะแนน</th>
                 <th className="px-3 py-2.5">ชื่อ / กิจการ</th>
                 <th className="px-3 py-2.5">คิว</th>
                 <th className="px-3 py-2.5">Gate</th>
@@ -169,7 +170,7 @@ export default function InterviewBoard({
               </tr>
             </thead>
             <tbody>
-              {ranked.map((c) => (
+              {cands.map((c) => (
                 <ItvRow
                   key={c.id}
                   c={c}
@@ -179,7 +180,7 @@ export default function InterviewBoard({
                   onFail={() => quickDecide(c.id, c.round2Result === "FAIL" ? "PENDING" : "FAIL")}
                 />
               ))}
-              {ranked.length === 0 && (
+              {cands.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-3 py-12 text-center text-slate-400">
                     ยังไม่มีผู้จองช่องสัมภาษณ์ — จองช่องในหน้าคัดกรองก่อน
@@ -192,7 +193,7 @@ export default function InterviewBoard({
 
         {/* การ์ด — มือถือ */}
         <div className="mt-4 space-y-2 md:hidden">
-          {ranked.map((c) => (
+          {cands.map((c) => (
             <ItvCard
               key={c.id}
               c={c}
@@ -202,7 +203,7 @@ export default function InterviewBoard({
               onFail={() => quickDecide(c.id, c.round2Result === "FAIL" ? "PENDING" : "FAIL")}
             />
           ))}
-          {ranked.length === 0 && (
+          {cands.length === 0 && (
             <div className="rounded-xl border border-slate-200 bg-white px-3 py-12 text-center text-slate-400">
               ยังไม่มีผู้จองช่องสัมภาษณ์
             </div>
@@ -228,10 +229,10 @@ export default function InterviewBoard({
           candidate={selected}
           lead={selected.phone ? leadByPhone[selected.phone] ?? null : null}
           rank={rankOf.get(selected.id) ?? null}
-          position={{ index: selectedIndex, total: ranked.length }}
+          position={{ index: selectedIndex, total: cands.length }}
           onClose={() => setSelectedId(null)}
-          onPrev={selectedIndex > 0 ? () => setSelectedId(ranked[selectedIndex - 1].id) : undefined}
-          onNext={selectedIndex < ranked.length - 1 ? () => setSelectedId(ranked[selectedIndex + 1].id) : undefined}
+          onPrev={selectedIndex > 0 ? () => setSelectedId(cands[selectedIndex - 1].id) : undefined}
+          onNext={selectedIndex < cands.length - 1 ? () => setSelectedId(cands[selectedIndex + 1].id) : undefined}
           onChanged={refresh}
           onOptimistic={applyOverlay}
         />
