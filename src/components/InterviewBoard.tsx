@@ -142,8 +142,8 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
           <Stat label={`เลือกเข้าร่วม (เป้า ${FINAL_TARGET})`} value={`${stats.selected}/${FINAL_TARGET}`} tone="green" />
         </div>
 
-        {/* สรุปกลุ่มอบรมของผู้ชนะ — สำหรับจัดคิว */}
-        <TrainingSummary winners={cands.filter((c) => c.round2Result === "PASS")} />
+        {/* สรุปกลุ่มอบรม — นับจากผู้สัมภาษณ์ทุกคนที่ติ๊กกลุ่มแล้ว (ไม่ต้องรอผลเลือก) */}
+        <TrainingSummary people={cands} />
       </div>
 
       <div className="mx-auto max-w-[1500px] px-5 pb-4">
@@ -368,20 +368,21 @@ function ItvCard({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: n
   );
 }
 
-function TrainingSummary({ winners }: { winners: CandidateDTO[] }) {
-  const CAP = 8; // เป้าต่อกลุ่ม (~7-8 รวม 15)
+function TrainingSummary({ people }: { people: CandidateDTO[] }) {
+  const CAP = 8; // เป้าต่อกลุ่ม (~7-8 รวม 15 สำหรับผู้ชนะ)
   const has = (c: CandidateDTO, g: number) => c.trainingGroups.includes(g);
-  const g1 = winners.filter((c) => has(c, 1)).length;
-  const g2 = winners.filter((c) => has(c, 2)).length;
-  const only1 = winners.filter((c) => has(c, 1) && !has(c, 2)).length;
-  const only2 = winners.filter((c) => has(c, 2) && !has(c, 1)).length;
-  const both = winners.filter((c) => has(c, 1) && has(c, 2)).length;
-  const none = winners.filter((c) => c.trainingGroups.length === 0).length;
+  const picked = people.filter((c) => c.trainingGroups.length > 0).length;
+  const g1 = people.filter((c) => has(c, 1)).length;
+  const g2 = people.filter((c) => has(c, 2)).length;
+  const only1 = people.filter((c) => has(c, 1) && !has(c, 2)).length;
+  const only2 = people.filter((c) => has(c, 2) && !has(c, 1)).length;
+  const both = people.filter((c) => has(c, 1) && has(c, 2)).length;
+  const none = people.filter((c) => c.trainingGroups.length === 0).length;
   return (
     <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-          <CalendarDays className="h-4 w-4" /> สรุปกลุ่มอบรม (ผู้ชนะ {winners.length}/{FINAL_TARGET})
+          <CalendarDays className="h-4 w-4" /> สรุปกลุ่มอบรม (เลือกแล้ว {picked}/{people.length} คน · เป้ารับกลุ่มละ ~{CAP})
         </h3>
         {none > 0 && (
           <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
