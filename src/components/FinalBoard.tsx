@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, Users, CalendarDays, Check, MapPin, FileSpreadsheet } from "lucide-react";
+import { Trophy, CalendarDays, Check, MapPin, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CandidateDTO } from "@/lib/types";
 import { TRAINING_GROUPS, COACHES } from "@/lib/slots";
 import { thaiWeekdayShort, thaiDateShort } from "@/lib/format";
@@ -22,6 +22,8 @@ const COACH_COLOR: Record<string, string> = {
   "อ.มิ้น": "bg-amber-100 text-amber-700",
   "อ.เอ็ม": "bg-sky-100 text-sky-700",
 };
+const TH_MONTHS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+const WEEKDAYS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 
 export default function FinalBoard({
   winners,
@@ -275,54 +277,93 @@ function GroupsView({ people, addrOf }: { people: CandidateDTO[]; addrOf: (c: Ca
   );
 }
 
-/* ---------- มุมมองปฏิทิน visit (จัดตามวัน) ---------- */
+/* ---------- มุมมองปฏิทิน visit (calendar grid รายเดือน) ---------- */
 function CalendarView({ people, addrOf }: { people: CandidateDTO[]; addrOf: (c: CandidateDTO) => string }) {
+  const visits = useMemo(() => people.filter((c) => c.consultDate), [people]);
   const byDate = useMemo(() => {
     const m = new Map<string, CandidateDTO[]>();
-    for (const c of people) if (c.consultDate) {
-      if (!m.has(c.consultDate)) m.set(c.consultDate, []);
-      m.get(c.consultDate)!.push(c);
+    for (const c of visits) {
+      if (!m.has(c.consultDate!)) m.set(c.consultDate!, []);
+      m.get(c.consultDate!)!.push(c);
     }
-    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [people]);
+    return m;
+  }, [visits]);
+
+  // เดือนเริ่มต้น = เดือนของวันนัดแรกสุด (ไม่งั้น มิ.ย. 2026)
+  const initial = useMemo(() => {
+    const dates = visits.map((c) => c.consultDate!).sort();
+    if (dates.length) {
+      const [y, mo] = dates[0].split("-").map(Number);
+      return y * 12 + (mo - 1);
+    }
+    return 2026 * 12 + 5;
+  }, [visits]);
+  const [ym, setYm] = useState(initial);
+  const year = Math.floor(ym / 12);
+  const month = ym % 12;
+
+  const firstW = new Date(year, month, 1).getDay();
+  const daysIn = new Date(year, month + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstW; i++) cells.push(null);
+  for (let d = 1; d <= daysIn; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+  const keyOf = (d: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
   const noDate = people.filter((c) => !c.consultDate);
 
   return (
-    <div className="space-y-3">
-      {byDate.map(([date, list]) => (
-        <div key={date} className="rounded-xl border border-slate-200 bg-white p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-violet-600" />
-            <h3 className="font-bold text-slate-800">{thaiWeekdayShort(date)} {thaiDateShort(date)}</h3>
-            <span className="text-xs text-slate-400">· {list.length} กิจการ</span>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {list.map((c) => (
-              <div key={c.id} className="flex items-start gap-2 rounded-lg border border-slate-100 bg-slate-50/50 p-2">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-slate-800">{c.company ?? c.name}</div>
-                  <div className="truncate text-xs text-slate-500">{c.name}{c.phone ? ` · ${c.phone}` : ""}</div>
-                  {(c.visitLocation || addrOf(c)) && (
-                    <div className="mt-0.5 text-xs text-slate-400">{c.visitLocation || addrOf(c)}</div>
-                  )}
-                  <div className="mt-1 flex flex-wrap gap-1 text-xs">
-                    {c.visitCoach ? (
-                      <span className={`rounded px-1.5 py-0.5 font-medium ${COACH_COLOR[c.visitCoach] ?? "bg-slate-100"}`}>{c.visitCoach}</span>
-                    ) : (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-700">ยังไม่ระบุโค้ช</span>
-                    )}
-                    {c.finalGroup && <span className={`rounded px-1.5 py-0.5 ${GROUP_COLOR[c.finalGroup]}`}>{c.finalGroup === 1 ? "พุธ" : "จันทร์"}</span>}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div>
+      {/* นำทางเดือน + legend โค้ช */}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setYm((v) => v - 1)} className="rounded-md border border-slate-300 p-1.5 hover:bg-slate-50">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <h3 className="min-w-[110px] text-center font-bold text-slate-800">{TH_MONTHS[month]} {year + 543}</h3>
+          <button onClick={() => setYm((v) => v + 1)} className="rounded-md border border-slate-300 p-1.5 hover:bg-slate-50">
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
-      ))}
-      {byDate.length === 0 && <div className="rounded-xl border border-slate-200 bg-white px-3 py-12 text-center text-slate-400">ยังไม่มีการนัด visit</div>}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {COACHES.map((co) => (
+            <span key={co} className={`rounded px-2 py-0.5 font-medium ${COACH_COLOR[co]}`}>{co}</span>
+          ))}
+          <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-500">ยังไม่ระบุโค้ช</span>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-xs font-semibold text-slate-500">
+          {WEEKDAYS.map((w) => (
+            <div key={w} className="py-2">{w}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {cells.map((d, i) => (
+            <div key={i} className={`min-h-[100px] border-b border-r border-slate-100 p-1 ${d ? "" : "bg-slate-50/40"}`}>
+              {d && (
+                <>
+                  <div className="px-1 text-xs font-medium text-slate-400">{d}</div>
+                  <div className="mt-0.5 space-y-0.5">
+                    {(byDate.get(keyOf(d)) ?? []).map((c) => (
+                      <div
+                        key={c.id}
+                        className={`truncate rounded px-1 py-0.5 text-[11px] font-medium ${c.visitCoach ? COACH_COLOR[c.visitCoach] ?? "bg-slate-100 text-slate-600" : "bg-slate-100 text-slate-600"}`}
+                        title={`${c.company ?? c.name}\n${c.visitCoach ?? "ยังไม่ระบุโค้ช"}\n${c.visitLocation || addrOf(c) || ""}`}
+                      >
+                        {c.visitCoach ? `${c.visitCoach.replace("อ.", "")}· ` : ""}{c.company ?? c.name}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {noDate.length > 0 && (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white p-3">
+        <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-white p-3">
           <h3 className="mb-2 text-sm font-bold text-slate-500">ยังไม่ได้นัด visit ({noDate.length})</h3>
           <div className="flex flex-wrap gap-2">
             {noDate.map((c) => (
