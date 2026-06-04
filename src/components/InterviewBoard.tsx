@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CandidateDTO, Result } from "@/lib/types";
 import { gateStatus, interviewTotal, interviewComplete, FINAL_TARGET } from "@/lib/interview";
+import { TRAINING_GROUPS } from "@/lib/slots";
 import { setRound2Result } from "@/app/actions";
 import InterviewPanel from "./InterviewPanel";
 import TabNav from "./TabNav";
@@ -134,6 +135,12 @@ export default function InterviewBoard({ candidates }: { candidates: CandidateDT
           <Stat label="ประเมินครบ" value={`${stats.done}/${stats.total}`} tone="blue" />
           <Stat label={`เลือกเข้าร่วม (เป้า ${FINAL_TARGET})`} value={`${stats.selected}/${FINAL_TARGET}`} tone="green" />
         </div>
+
+        {/* สรุปกลุ่มอบรมของผู้ชนะ — สำหรับจัดคิว */}
+        <TrainingSummary winners={cands.filter((c) => c.round2Result === "PASS")} />
+      </div>
+
+      <div className="mx-auto max-w-[1500px] px-5 pb-4">
 
         {/* ตาราง — จอใหญ่ */}
         <div className="mt-4 hidden overflow-auto rounded-xl border border-slate-200 bg-white md:block">
@@ -340,6 +347,54 @@ function ItvCard({ c, rank, onOpen, onPass, onFail }: { c: CandidateDTO; rank: n
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <ScoreButton c={c} onOpen={onOpen} />
         <ResultButtons c={c} onPass={onPass} onFail={onFail} />
+      </div>
+    </div>
+  );
+}
+
+function TrainingSummary({ winners }: { winners: CandidateDTO[] }) {
+  const CAP = 8; // เป้าต่อกลุ่ม (~7-8 รวม 15)
+  const has = (c: CandidateDTO, g: number) => c.trainingGroups.includes(g);
+  const g1 = winners.filter((c) => has(c, 1)).length;
+  const g2 = winners.filter((c) => has(c, 2)).length;
+  const only1 = winners.filter((c) => has(c, 1) && !has(c, 2)).length;
+  const only2 = winners.filter((c) => has(c, 2) && !has(c, 1)).length;
+  const both = winners.filter((c) => has(c, 1) && has(c, 2)).length;
+  const none = winners.filter((c) => c.trainingGroups.length === 0).length;
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-bold text-slate-700">
+          📅 สรุปกลุ่มอบรม (ผู้ชนะ {winners.length}/{FINAL_TARGET})
+        </h3>
+        {none > 0 && <span className="text-xs font-medium text-amber-600">⚠ ยังไม่เลือกกลุ่ม {none} คน</span>}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <GroupBar name={TRAINING_GROUPS[1].name} dates={TRAINING_GROUPS[1].dates} count={g1} cap={CAP} />
+        <GroupBar name={TRAINING_GROUPS[2].name} dates={TRAINING_GROUPS[2].dates} count={g2} cap={CAP} />
+      </div>
+      <div className="mt-2 text-xs text-slate-500">
+        เฉพาะพุธ <b className="text-slate-700">{only1}</b> · เฉพาะจันทร์ <b className="text-slate-700">{only2}</b> ·
+        สะดวกทั้ง 2 กลุ่ม (ยืดหยุ่นจัดได้) <b className="text-slate-700">{both}</b>
+      </div>
+    </div>
+  );
+}
+
+function GroupBar({ name, dates, count, cap }: { name: string; dates: string; count: number; cap: number }) {
+  const full = count >= cap;
+  const pct = Math.min(100, cap ? (count / cap) * 100 : 0);
+  return (
+    <div className="rounded-lg border border-slate-200 p-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-slate-700">{name}</span>
+        <span className={`text-sm font-bold ${full ? "text-green-600" : "text-slate-700"}`}>
+          {count}/{cap} {full ? "✓ ครบ" : ""}
+        </span>
+      </div>
+      <div className="mt-0.5 text-xs text-slate-400">{dates}</div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-2 rounded-full ${full ? "bg-green-500" : "bg-blue-500"}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
