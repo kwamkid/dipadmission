@@ -23,6 +23,15 @@ export function slotLabelLines(label: string, isoDate: string, start: string, en
   return `${queue}\n${thaiWeekdayShort(isoDate)} ${thaiDateShort(isoDate)}\n${start}-${end}`;
 }
 
+/** เบอร์ไทยเป็น format 66: "0854149995" → "66854149995" */
+export function phone66(phone: string | null | undefined): string {
+  if (!phone) return "";
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("66")) return digits;
+  return `66${digits.replace(/^0+/, "")}`;
+}
+
 /** แปลง Date เป็น "YYYY-MM-DD" (อิง UTC เพราะคอลัมน์เป็น @db.Date) */
 export function toIsoDate(d: Date | null): string | null {
   if (!d) return null;

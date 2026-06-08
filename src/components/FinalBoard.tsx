@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trophy, CalendarDays, Check, MapPin, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react";
 import type { CandidateDTO } from "@/lib/types";
 import { TRAINING_GROUPS, COACHES } from "@/lib/slots";
-import { thaiWeekdayShort, thaiDateShort } from "@/lib/format";
+import { thaiWeekdayShort, thaiDateShort, phone66 } from "@/lib/format";
 import { TABLE } from "@/lib/ui";
 import { saveFinal } from "@/app/actions";
 import TabNav from "./TabNav";
@@ -28,11 +28,14 @@ const WEEKDAYS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
 export default function FinalBoard({
   winners,
   companyAddress,
+  emailByPhone,
 }: {
   winners: CandidateDTO[];
   companyAddress: Record<string, string>;
+  emailByPhone: Record<string, string>;
 }) {
   const addrOf = (c: CandidateDTO) => (c.phone ? companyAddress[c.phone] ?? "" : "");
+  const emailOf = (c: CandidateDTO) => (c.phone ? emailByPhone[c.phone] ?? "" : "");
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [over, setOver] = useState<Record<string, Partial<CandidateDTO>>>({});
@@ -69,12 +72,13 @@ export default function FinalBoard({
 
   const clean = (s: string) => s.replace(/[\t\n]/g, " ");
   const copyText = [
-    ["ชื่อ", "กิจการ", "เบอร์", "กลุ่มเรียน", "i-industry", "วัน visit", "โค้ช", "สถานที่นัด"].join("\t"),
+    ["ชื่อ", "กิจการ", "เบอร์", "อีเมล", "กลุ่มเรียน", "i-industry", "วัน visit", "โค้ช", "สถานที่นัด"].join("\t"),
     ...people.map((c) =>
       [
         c.name,
         c.company ?? "",
-        c.phone ?? "",
+        phone66(c.phone),
+        emailOf(c),
         c.finalGroup ? TRAINING_GROUPS[c.finalGroup].name : "",
         c.iindustryReg ? "ลงแล้ว" : "ยัง",
         c.consultDate ? `${thaiWeekdayShort(c.consultDate)} ${thaiDateShort(c.consultDate)}` : "",
@@ -126,7 +130,7 @@ export default function FinalBoard({
           </div>
         </div>
 
-        {view === "table" && <EditTable people={people} set={set} addrOf={addrOf} />}
+        {view === "table" && <EditTable people={people} set={set} addrOf={addrOf} emailOf={emailOf} />}
         {view === "groups" && <GroupsView people={people} addrOf={addrOf} />}
         {view === "calendar" && <CalendarView people={people} addrOf={addrOf} />}
       </div>
@@ -135,7 +139,7 @@ export default function FinalBoard({
 }
 
 /* ---------- มุมมองตารางจัดกลุ่ม/นัด ---------- */
-function EditTable({ people, set, addrOf }: { people: CandidateDTO[]; set: (id: string, d: Partial<CandidateDTO>) => void; addrOf: (c: CandidateDTO) => string }) {
+function EditTable({ people, set, addrOf, emailOf }: { people: CandidateDTO[]; set: (id: string, d: Partial<CandidateDTO>) => void; addrOf: (c: CandidateDTO) => string; emailOf: (c: CandidateDTO) => string }) {
   return (
     <div className={`${TABLE.wrap}`}>
       <table className={`min-w-[1250px] ${TABLE.table}`}>
@@ -156,7 +160,8 @@ function EditTable({ people, set, addrOf }: { people: CandidateDTO[]; set: (id: 
               <td className="px-3 py-2.5">
                 <div className="font-medium text-slate-800">{c.name}</div>
                 <div className="text-sm text-slate-400">{c.company ?? "-"}</div>
-                {c.phone && <div className="text-xs text-slate-400">{c.phone}</div>}
+                {c.phone && <div className="text-xs text-slate-400">{phone66(c.phone)}</div>}
+                {emailOf(c) && <div className="text-xs text-slate-400">{emailOf(c)}</div>}
                 {addrOf(c) && (
                   <div className="mt-0.5 flex max-w-[240px] items-start gap-1 text-xs text-slate-400">
                     <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {addrOf(c)}
