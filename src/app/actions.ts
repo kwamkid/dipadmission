@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import type { ContactStatus, Result } from "@/lib/types";
+import type { ContactStatus, Result, VisitReportDTO, VisitStatus } from "@/lib/types";
+import type { Prisma } from "@prisma/client";
 
 type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -198,6 +199,47 @@ export async function setRound2Result(id: string, result: Result): Promise<Actio
   try {
     await prisma.candidate.update({ where: { id }, data: { round2Result: result } });
     revalidatePath("/interview");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+// ฟิลด์ที่แก้ได้ในรายงานวินิจฉัย (ไม่รวม status — มี action แยก)
+export type VisitReportInput = Partial<Omit<VisitReportDTO, "status">>;
+
+/** บันทึกรายงานวินิจฉัย 1st visit ทีละ field (upsert — อาจยังไม่มี record) */
+export async function saveVisitField(
+  candidateId: string,
+  data: VisitReportInput
+): Promise<ActionResult> {
+  try {
+    // cast เป็น Prisma update input (JSON fields → InputJsonValue)
+    const payload = data as Prisma.VisitReportUpdateInput;
+    await prisma.visitReport.upsert({
+      where: { candidateId },
+      create: { candidate: { connect: { id: candidateId } }, ...payload } as Prisma.VisitReportCreateInput,
+      update: payload,
+    });
+    revalidatePath("/visit");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: (e as Error).message };
+  }
+}
+
+/** เปลี่ยนสถานะรายงาน (DRAFT/DONE) */
+export async function setVisitStatus(
+  candidateId: string,
+  status: VisitStatus
+): Promise<ActionResult> {
+  try {
+    await prisma.visitReport.upsert({
+      where: { candidateId },
+      create: { candidateId, status },
+      update: { status },
+    });
+    revalidatePath("/visit");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: (e as Error).message };

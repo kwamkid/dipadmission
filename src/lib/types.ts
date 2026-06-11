@@ -1,8 +1,10 @@
 // DTO ที่ส่งจาก server → client (serializable, แปลง Date เป็น string แล้ว)
 import type { Lead } from "@prisma/client";
+import type { ChannelRow, MandayRow, WebComponentRow, Assets } from "./visit";
 
 export type ContactStatus = "PENDING" | "CONTACTED" | "UNREACHABLE";
 export type Result = "PENDING" | "PASS" | "FAIL";
+export type VisitStatus = "DRAFT" | "DONE";
 
 // สถานะของผู้สมัครในกระบวนการ: ทั่วไป → รอบแรก → 30 (สัมภาษณ์) → 15 (ผู้ชนะ)
 export type LeadStatus = "applicant" | "round1" | "round30" | "winner";
@@ -67,6 +69,64 @@ export interface CandidateDTO {
   finalGroup: number | null;
   visitCoach: string | null;
   visitLocation: string | null;
+}
+
+// ---------- รายงานวินิจฉัยรายกิจการ (1st visit / consult) ----------
+export interface VisitReportDTO {
+  capitalRegistered: string | null;
+  yearRegistered: string | null;
+  currentEcommerce: string | null;
+  history: string | null;
+
+  swotStrength: string | null;
+  swotWeakness: string | null;
+  swotOpportunity: string | null;
+  swotThreat: string | null;
+  channelAnalysis: ChannelRow[];
+
+  problems: string | null;
+  improvements: string | null;
+
+  approach: string | null;
+  mandayPlan: MandayRow[];
+
+  websiteComponents: WebComponentRow[];
+  domainWanted: string | null;
+  assets: Assets;
+
+  mouSigned: boolean;
+  consentSigned: boolean;
+  mandaySigned: boolean;
+  kpiSalesPerMonth: string | null;
+  kpiCustomers: string | null;
+  kpiMainChannel: string | null;
+  oldWebsiteUrl: string | null;
+
+  photos: string[];
+  videoUrl: string | null;
+
+  status: VisitStatus;
+}
+
+// ข้อมูลพื้นฐานกิจการ (อ่านอย่างเดียว) — ดึงจาก Lead มาแสดงในหัวฟอร์ม visit
+export interface VisitLeadInfo {
+  contactName: string | null; // ผู้ติดต่อ (ชื่อ-นามสกุล)
+  email: string | null;
+  registrationNo: string | null;
+  companyAddress: string | null;
+  businessType: string | null;
+  mainProduct: string | null;
+  revenue: string | null;
+  yearsOperating: string | null;
+  facebookUrl: string | null;
+  website: string | null;
+}
+
+// หนึ่งรายการในหน้า /visit = candidate (ผู้ผ่าน) + ข้อมูล lead + รายงาน
+export interface VisitItem {
+  candidate: CandidateDTO;
+  lead: VisitLeadInfo | null;
+  report: VisitReportDTO | null;
 }
 
 // เงื่อนไขที่ต้องครบ "ก่อนเลือกช่องวันสัมภาษณ์"

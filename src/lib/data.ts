@@ -2,7 +2,14 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { toIsoDate, slotLabelLines } from "./format";
-import type { CandidateDTO, SlotDTO, ContactStatus, Result, LeadDTO, LeadStatus } from "./types";
+import type {
+  CandidateDTO, SlotDTO, ContactStatus, Result, LeadDTO, LeadStatus,
+  VisitItem, VisitReportDTO, VisitLeadInfo, VisitStatus,
+} from "./types";
+import {
+  defaultChannelAnalysis, defaultMandayPlan, defaultWebComponents,
+  type ChannelRow, type MandayRow, type WebComponentRow, type Assets,
+} from "./visit";
 
 type CandidateRow = Prisma.CandidateGetPayload<{ include: { interviewSlot: true } }>;
 
@@ -167,5 +174,83 @@ export async function getLeads(): Promise<LeadDTO[]> {
     const { createdAt: _omit, ...rest } = l;
     void _omit;
     return { ...rest, status };
+  });
+}
+
+// แปลง VisitReport row (Prisma) → DTO ; JSON fields ที่ยังว่างให้ seed จากค่าคงที่
+type VisitReportRow = NonNullable<
+  Prisma.CandidateGetPayload<{ include: { visitReport: true } }>["visitReport"]
+>;
+
+function toVisitReportDTO(r: VisitReportRow): VisitReportDTO {
+  const channelAnalysis = (r.channelAnalysis as unknown as ChannelRow[]) ?? [];
+  const mandayPlan = (r.mandayPlan as unknown as MandayRow[]) ?? [];
+  const websiteComponents = (r.websiteComponents as unknown as WebComponentRow[]) ?? [];
+  return {
+    capitalRegistered: r.capitalRegistered,
+    yearRegistered: r.yearRegistered,
+    currentEcommerce: r.currentEcommerce,
+    history: r.history,
+    swotStrength: r.swotStrength,
+    swotWeakness: r.swotWeakness,
+    swotOpportunity: r.swotOpportunity,
+    swotThreat: r.swotThreat,
+    channelAnalysis: channelAnalysis.length ? channelAnalysis : defaultChannelAnalysis(),
+    problems: r.problems,
+    improvements: r.improvements,
+    approach: r.approach,
+    mandayPlan: mandayPlan.length ? mandayPlan : defaultMandayPlan(),
+    websiteComponents: websiteComponents.length ? websiteComponents : defaultWebComponents(),
+    domainWanted: r.domainWanted,
+    assets: (r.assets as unknown as Assets) ?? {},
+    mouSigned: r.mouSigned,
+    consentSigned: r.consentSigned,
+    mandaySigned: r.mandaySigned,
+    kpiSalesPerMonth: r.kpiSalesPerMonth,
+    kpiCustomers: r.kpiCustomers,
+    kpiMainChannel: r.kpiMainChannel,
+    oldWebsiteUrl: r.oldWebsiteUrl,
+    photos: r.photos,
+    videoUrl: r.videoUrl,
+    status: r.status as VisitStatus,
+  };
+}
+
+/** รายการ 15 กิจการที่ผ่าน Final สำหรับเก็บข้อมูลวินิจฉัย 1st visit */
+export async function getVisitList(): Promise<VisitItem[]> {
+  const rows = await prisma.candidate.findMany({
+    where: { round2Result: "PASS" },
+    orderBy: [{ finalGroup: "asc" }, { name: "asc" }],
+    include: { interviewSlot: true, visitReport: true },
+  });
+
+  // ดึง Lead มา join ด้วยเบอร์ (phoneNorm) เพื่อเอาข้อมูลพื้นฐานกิจการ
+  const leads = await prisma.lead.findMany({
+    where: { phoneNorm: { in: rows.map((c) => c.phone).filter(Boolean) as string[] } },
+  });
+  const leadByPhone = new Map<string, (typeof leads)[number]>();
+  for (const l of leads) if (l.phoneNorm) leadByPhone.set(l.phoneNorm, l);
+
+  return rows.map((c) => {
+    const l = c.phone ? leadByPhone.get(c.phone) : undefined;
+    const lead: VisitLeadInfo | null = l
+      ? {
+          contactName: [l.prefix, l.firstName, l.lastName].filter(Boolean).join(" ") || null,
+          email: l.email,
+          registrationNo: l.registrationNo,
+          companyAddress: l.companyAddress,
+          businessType: l.businessType,
+          mainProduct: l.mainProduct,
+          revenue: l.revenue,
+          yearsOperating: l.yearsOperating,
+          facebookUrl: l.facebookUrl,
+          website: l.website,
+        }
+      : null;
+    return {
+      candidate: toCandidateDTO(c),
+      lead,
+      report: c.visitReport ? toVisitReportDTO(c.visitReport) : null,
+    };
   });
 }

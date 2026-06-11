@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, ClipboardList, CalendarDays, Mic, Trophy } from "lucide-react";
+import { Users, ClipboardList, CalendarDays, Mic, Trophy, Building2 } from "lucide-react";
 
 const TABS = [
   { href: "/applicants", label: "ผู้สมัครทั้งหมด", key: "applicants", Icon: Users },
@@ -7,6 +7,7 @@ const TABS = [
   { href: "/queue", label: "คิวสัมภาษณ์", key: "queue", Icon: CalendarDays },
   { href: "/interview", label: "สัมภาษณ์", key: "interview", Icon: Mic },
   { href: "/final", label: "ผู้เข้าร่วม", key: "final", Icon: Trophy },
+  { href: "/visit", label: "เก็บข้อมูลกิจการ", key: "visit", Icon: Building2 },
 ];
 
 /** เมนูแท็บสลับหน้า — วางในส่วน header (พื้นน้ำเงิน ตัวอักษรขาว) */

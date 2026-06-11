@@ -65,6 +65,9 @@ model Candidate {
   // i-industry จริง = ใช้ field iindustryReg เดิม
   // วันนัด 1st visit จริง = ใช้ field consultDate เดิม (@db.Date)
 
+  // ----- รายงานวินิจฉัยรายกิจการ (1st visit / consult) -----
+  visitReport VisitReport?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -122,6 +125,62 @@ model Lead {
   createdAt DateTime @default(now())
 
   @@index([phoneNorm])
+}
+
+/// รายงานวินิจฉัยรายกิจการ ตอนลงพื้นที่ 1st visit (1:1 กับ Candidate)
+/// เก็บเฉพาะ "เนื้อหาวินิจฉัย" — ข้อมูลพื้นฐานกิจการดึงจาก Candidate/Lead
+model VisitReport {
+  id          String    @id @default(cuid())
+  candidateId String    @unique
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  // ----- ส่วนที่ 1 ข้อมูลเพิ่มเติม (ที่ Candidate/Lead ยังไม่มี) -----
+  capitalRegistered String? // ทุนจดทะเบียน
+  yearRegistered    String? // ปีที่จดทะเบียนธุรกิจ
+  currentEcommerce  String? // ช่องทาง e-Commerce ปัจจุบัน (สรุป)
+  history           String? @db.Text // 1.2 ประวัติความเป็นมา
+
+  // ----- ส่วนที่ 2 วินิจฉัย -----
+  swotStrength    String? @db.Text
+  swotWeakness    String? @db.Text
+  swotOpportunity String? @db.Text
+  swotThreat      String? @db.Text
+  channelAnalysis Json    @default("[]") // [{ channel, status, recommend }]
+
+  // ----- ส่วนที่ 3 ปัญหา -----
+  problems     String? @db.Text // 3.1 ปัญหาหลัก
+  improvements String? @db.Text // 3.2 สิ่งที่อยากพัฒนา
+
+  // ----- ส่วนที่ 4 แนวทางพัฒนา -----
+  approach   String? @db.Text // 4.1 แนวทาง/วิธีการ
+  mandayPlan Json    @default("[]") // [{ activity, planned: bool }]
+
+  // ----- ส่วนที่ 5 เว็บไซต์ที่เหมาะสม -----
+  websiteComponents Json    @default("[]") // [{ component, suitable: bool, note }]
+  domainWanted      String?
+  assets            Json    @default("{}") // { logo, productImages, ... } : bool
+
+  // ----- ภาคผนวก / KPI baseline -----
+  mouSigned        Boolean @default(false)
+  consentSigned    Boolean @default(false)
+  mandaySigned     Boolean @default(false)
+  kpiSalesPerMonth String?
+  kpiCustomers     String?
+  kpiMainChannel   String?
+  oldWebsiteUrl    String?
+
+  // ----- รูป/วิดีโอ (checklist เตือน — ไฟล์จริงเก็บนอกระบบ) -----
+  photos   String[] @default([]) // ลิงก์/ชื่อไฟล์ภาพ (สินค้า/บริการ/ร้าน/ทีม)
+  videoUrl String?
+
+  status    VisitStatus @default(DRAFT) // DRAFT / DONE
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+enum VisitStatus {
+  DRAFT
+  DONE
 }
 
 enum ContactStatus {
