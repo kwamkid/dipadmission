@@ -31,7 +31,7 @@ export default async function QueuePage() {
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="flex items-center gap-2 text-xl font-bold">

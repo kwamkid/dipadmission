@@ -10,6 +10,7 @@ import { TABLE } from "@/lib/ui";
 import { setResult, setContactStatus, saveScreening } from "@/app/actions";
 import ScreeningPanel from "./ScreeningPanel";
 import TabNav from "./TabNav";
+import Select from "./Select";
 
 type ResultFilter = "ALL" | "PENDING" | "PASS" | "FAIL";
 type StatusFilter = "ALL" | "PENDING" | "CONTACTED" | "UNREACHABLE";
@@ -156,7 +157,7 @@ export default function ScreeningBoard({
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
           <h1 className="flex items-center gap-2 text-xl font-bold">
             <ClipboardList className="h-6 w-6" /> คัดกรองผู้สมัครเข้าโครงการ — รอบที่ 1 (Phone Screening)
           </h1>
@@ -168,7 +169,7 @@ export default function ScreeningBoard({
       </header>
 
       {/* Stats */}
-      <div className="mx-auto max-w-[1500px] px-5 py-4">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <Stat label="ผู้สมัครทั้งหมด" value={stats.total} tone="slate" />
           <Stat label="โทรติดต่อแล้ว" value={stats.contacted} tone="blue" />
@@ -402,30 +403,6 @@ function Stat({
       <div className="text-xs text-slate-500">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${tones[tone]}`}>{value}</div>
     </div>
-  );
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: [string, string][];
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-blue-500"
-    >
-      {options.map(([v, label]) => (
-        <option key={v} value={v}>
-          {label}
-        </option>
-      ))}
-    </select>
   );
 }
 

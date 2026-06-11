@@ -6,6 +6,7 @@ import type { LeadDTO, LeadStatus } from "@/lib/types";
 import { TABLE } from "@/lib/ui";
 import TabNav from "./TabNav";
 import CopyButton from "./CopyButton";
+import Select from "./Select";
 import LeadDetailModal, { LEAD_FIELDS as FIELDS, StatusBadge, statusLabel, isUrl } from "./LeadDetailModal";
 
 type StatusFilter = "ALL" | LeadStatus;
@@ -47,7 +48,7 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="flex items-center gap-2 text-xl font-bold">
@@ -68,7 +69,7 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1500px] px-5 py-4">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
         {/* filter */}
         <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
           <div className="relative">
@@ -80,17 +81,17 @@ export default function ApplicantsBoard({ leads }: { leads: LeadDTO[] }) {
               className="h-9 w-64 rounded-lg border border-slate-300 pl-8 pr-3 text-sm outline-none focus:border-blue-500"
             />
           </div>
-          <select
+          <Select
             value={status}
-            onChange={(e) => setStatus(e.target.value as StatusFilter)}
-            className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm outline-none focus:border-blue-500"
-          >
-            <option value="ALL">สถานะ: ทั้งหมด</option>
-            <option value="applicant">ผู้สมัคร (ยังไม่เข้ารอบ)</option>
-            <option value="round1">รอบแรก</option>
-            <option value="round30">เข้าสัมภาษณ์ (30)</option>
-            <option value="winner">ผู้ชนะ (15)</option>
-          </select>
+            onChange={(v) => setStatus(v as StatusFilter)}
+            options={[
+              ["ALL", "สถานะ: ทั้งหมด"],
+              ["applicant", "ผู้สมัคร (ยังไม่เข้ารอบ)"],
+              ["round1", "รอบแรก"],
+              ["round30", "เข้าสัมภาษณ์ (30)"],
+              ["winner", "ผู้ชนะ (15)"],
+            ]}
+          />
           <span className="ml-auto text-sm text-slate-500">แสดง {filtered.length} / {leads.length} ราย</span>
         </div>
 

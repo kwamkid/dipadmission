@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, CalendarDays, Check, MapPin, FileSpreadsheet, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trophy, CalendarDays, Check, MapPin, FileSpreadsheet, ChevronLeft, ChevronRight, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import type { CandidateDTO } from "@/lib/types";
 import { TRAINING_GROUPS, COACHES } from "@/lib/slots";
 import { thaiWeekdayShort, thaiDateShort, phone66 } from "@/lib/format";
@@ -10,6 +10,7 @@ import { TABLE } from "@/lib/ui";
 import { saveFinal } from "@/app/actions";
 import TabNav from "./TabNav";
 import CopyButton from "./CopyButton";
+import Select from "./Select";
 
 type View = "table" | "groups" | "calendar";
 
@@ -40,8 +41,12 @@ export default function FinalBoard({
   const [, startTransition] = useTransition();
   const [over, setOver] = useState<Record<string, Partial<CandidateDTO>>>({});
   const [view, setView] = useState<View>("table");
+  const [q, setQ] = useState("");
+  const [coachFilter, setCoachFilter] = useState("");
+  // เรียงตามวันนัด visit: null = ตามเดิม (กลุ่ม/ชื่อ), "asc" = เร็ว→ช้า, "desc" = ช้า→เร็ว
+  const [dateSort, setDateSort] = useState<null | "asc" | "desc">(null);
 
-  const people = useMemo(
+  const allPeople = useMemo(
     () => winners.map((c) => (over[c.id] ? { ...c, ...over[c.id] } : c)),
     [winners, over]
   );
@@ -61,14 +66,34 @@ export default function FinalBoard({
     });
   }
 
+  // กรองตามชื่อ/กิจการ + โค้ช + เรียงตามวันนัด (มีผลกับรายการที่แสดงทุกมุมมอง แต่ไม่กระทบตัวเลขสรุป)
+  const people = useMemo(() => {
+    const kw = q.trim().toLowerCase();
+    const filtered = allPeople.filter((c) => {
+      if (coachFilter && (c.visitCoach ?? "") !== coachFilter) return false;
+      if (kw) {
+        const hay = `${c.name} ${c.company ?? ""}`.toLowerCase();
+        if (!hay.includes(kw)) return false;
+      }
+      return true;
+    });
+    if (!dateSort) return filtered;
+    // คนที่ยังไม่นัดวัน → ไปท้ายสุดเสมอ
+    return [...filtered].sort((a, b) => {
+      if (!a.consultDate && !b.consultDate) return 0;
+      if (!a.consultDate) return 1;
+      if (!b.consultDate) return -1;
+      return dateSort === "asc" ? a.consultDate.localeCompare(b.consultDate) : b.consultDate.localeCompare(a.consultDate);
+    });
+  }, [allPeople, q, coachFilter, dateSort]);
+
   const stats = useMemo(() => {
-    const g1 = people.filter((c) => c.finalGroup === 1).length;
-    const g2 = people.filter((c) => c.finalGroup === 2).length;
-    const unassigned = people.filter((c) => !c.finalGroup).length;
-    const visit = people.filter((c) => c.consultDate).length;
-    const ind = people.filter((c) => c.iindustryReg).length;
-    return { g1, g2, unassigned, visit, ind };
-  }, [people]);
+    const g1 = allPeople.filter((c) => c.finalGroup === 1).length;
+    const g2 = allPeople.filter((c) => c.finalGroup === 2).length;
+    const unassigned = allPeople.filter((c) => !c.finalGroup).length;
+    const visit = allPeople.filter((c) => c.consultDate).length;
+    return { g1, g2, unassigned, visit };
+  }, [allPeople]);
 
   const clean = (s: string) => s.replace(/[\t\n]/g, " ");
   const copyText = [
@@ -91,14 +116,14 @@ export default function FinalBoard({
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="flex items-center gap-2 text-xl font-bold">
                 <Trophy className="h-6 w-6" /> ผู้เข้าร่วมโครงการ — จัดกลุ่ม &amp; นัด visit
               </h1>
               <p className="mt-0.5 text-sm text-blue-100">
-                {winners.length} กิจการ · กลุ่มพุธ {stats.g1} · กลุ่มจันทร์ {stats.g2} · นัด visit แล้ว {stats.visit}/{winners.length} · i-industry {stats.ind}/{winners.length}
+                {winners.length} กิจการ · กลุ่มพุธ {stats.g1} · กลุ่มจันทร์ {stats.g2} · นัด visit แล้ว {stats.visit}/{winners.length}
               </p>
             </div>
             <CopyButton text={copyText} icon={<FileSpreadsheet className="h-4 w-4" />} label="คัดลอกตาราง" doneMessage={`คัดลอก ${winners.length} กิจการแล้ว`} />
@@ -107,7 +132,7 @@ export default function FinalBoard({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1500px] px-5 py-4">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
         {/* สลับมุมมอง + นับกลุ่ม */}
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
@@ -130,6 +155,42 @@ export default function FinalBoard({
           </div>
         </div>
 
+        {/* ค้นหาตามชื่อ/กิจการ + กรองโค้ช */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="ค้นหาชื่อ / กิจการ"
+              className="h-9 w-full rounded-lg border border-slate-300 pl-8 pr-8 text-sm outline-none focus:border-blue-500"
+            />
+            {q && (
+              <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Select
+            value={coachFilter}
+            onChange={setCoachFilter}
+            options={[["", "โค้ชทุกคน"], ...COACHES.map((co) => [co, co] as [string, string])]}
+          />
+          <button
+            onClick={() => setDateSort((s) => (s === null ? "asc" : s === "asc" ? "desc" : null))}
+            title="เรียงตามวันนัด visit"
+            className={`inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium ${
+              dateSort ? "border-blue-500 bg-blue-50 text-blue-700" : "border-slate-300 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {dateSort === "asc" ? <ArrowUp className="h-4 w-4" /> : dateSort === "desc" ? <ArrowDown className="h-4 w-4" /> : <ArrowUpDown className="h-4 w-4" />}
+            เรียงวันนัด{dateSort === "asc" ? " (เร็ว→ช้า)" : dateSort === "desc" ? " (ช้า→เร็ว)" : ""}
+          </button>
+          {(q || coachFilter) && (
+            <span className="text-xs text-slate-500">แสดง {people.length}/{allPeople.length} กิจการ</span>
+          )}
+        </div>
+
         {view === "table" && <EditTable people={people} set={set} addrOf={addrOf} emailOf={emailOf} />}
         {view === "groups" && <GroupsView people={people} addrOf={addrOf} />}
         {view === "calendar" && <CalendarView people={people} addrOf={addrOf} />}
@@ -139,100 +200,161 @@ export default function FinalBoard({
 }
 
 /* ---------- มุมมองตารางจัดกลุ่ม/นัด ---------- */
-function EditTable({ people, set, addrOf, emailOf }: { people: CandidateDTO[]; set: (id: string, d: Partial<CandidateDTO>) => void; addrOf: (c: CandidateDTO) => string; emailOf: (c: CandidateDTO) => string }) {
+type EditProps = {
+  people: CandidateDTO[];
+  set: (id: string, d: Partial<CandidateDTO>) => void;
+  addrOf: (c: CandidateDTO) => string;
+  emailOf: (c: CandidateDTO) => string;
+};
+
+// ----- คอนโทรลที่ใช้ร่วมทั้งตาราง (จอใหญ่) และการ์ด (มือถือ) -----
+function ConvenientGroups({ c }: { c: CandidateDTO }) {
   return (
-    <div className={`${TABLE.wrap}`}>
-      <table className={`min-w-[1250px] ${TABLE.table}`}>
-        <thead className={TABLE.thead}>
-          <tr className={TABLE.theadRow}>
-            <th className="px-3 py-2.5">ชื่อ / กิจการ / ที่อยู่</th>
-            <th className="px-3 py-2.5">สะดวกกลุ่ม</th>
-            <th className="px-3 py-2.5">กลุ่มเรียนจริง</th>
-            <th className="px-3 py-2.5">i-industry</th>
-            <th className="px-3 py-2.5">วันนัด 1st visit</th>
-            <th className="px-3 py-2.5">โค้ชที่ไป</th>
-            <th className="px-3 py-2.5">สถานที่นัด</th>
-          </tr>
-        </thead>
-        <tbody>
-          {people.map((c) => (
-            <tr key={c.id} className={TABLE.row}>
-              <td className="px-3 py-2.5">
-                <div className="font-medium text-slate-800">{c.name}</div>
-                <div className="text-sm text-slate-400">{c.company ?? "-"}</div>
-                {c.phone && <div className="text-xs text-slate-400">{phone66(c.phone)}</div>}
-                {emailOf(c) && <div className="text-xs text-slate-400">{emailOf(c)}</div>}
-                {addrOf(c) && (
-                  <div className="mt-0.5 flex max-w-[240px] items-start gap-1 text-xs text-slate-400">
-                    <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {addrOf(c)}
-                  </div>
-                )}
-              </td>
-              <td className="px-3 py-2.5 text-xs text-slate-500">
-                {c.trainingGroups.length
-                  ? c.trainingGroups.map((g) => (g === 1 ? "พุธ" : "จันทร์")).join(" / ")
-                  : "-"}
-              </td>
-              <td className="px-3 py-2.5">
-                <select
-                  value={c.finalGroup ?? ""}
-                  onChange={(e) => set(c.id, { finalGroup: e.target.value ? Number(e.target.value) : null })}
-                  className={`h-9 rounded-lg border px-2 text-sm outline-none focus:border-blue-500 ${c.finalGroup ? "border-slate-300 font-medium" : "border-slate-300 text-slate-400"}`}
-                >
-                  <option value="">— เลือกกลุ่ม —</option>
-                  <option value="1">กลุ่ม 1 (พุธ)</option>
-                  <option value="2">กลุ่ม 2 (จันทร์)</option>
-                </select>
-              </td>
-              <td className="px-3 py-2.5">
-                <button
-                  onClick={() => set(c.id, { iindustryReg: !c.iindustryReg })}
-                  className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm font-medium ${
-                    c.iindustryReg ? "bg-green-600 text-white" : "border border-slate-300 text-slate-500"
-                  }`}
-                >
-                  {c.iindustryReg ? <Check className="h-4 w-4" /> : null} {c.iindustryReg ? "ลงแล้ว" : "ยังไม่ลง"}
-                </button>
-              </td>
-              <td className="px-3 py-2.5">
-                <input
-                  type="date"
-                  value={c.consultDate ?? ""}
-                  onChange={(e) => set(c.id, { consultDate: e.target.value || null })}
-                  className="h-9 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-blue-500"
-                />
-              </td>
-              <td className="px-3 py-2.5">
-                <select
-                  value={c.visitCoach ?? ""}
-                  onChange={(e) => set(c.id, { visitCoach: e.target.value || null })}
-                  className="h-9 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-blue-500"
-                >
-                  <option value="">— เลือกโค้ช —</option>
-                  {COACHES.map((co) => (
-                    <option key={co} value={co}>{co}</option>
-                  ))}
-                </select>
-              </td>
-              <td className="px-3 py-2.5">
-                <input
-                  type="text"
-                  defaultValue={c.visitLocation ?? ""}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim() || null;
-                    if (v !== (c.visitLocation ?? null)) set(c.id, { visitLocation: v });
-                  }}
-                  placeholder={addrOf(c) ? "ว่าง = ใช้ที่อยู่บริษัท" : "ระบุสถานที่นัด"}
-                  className="h-9 w-56 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-blue-500"
-                />
-              </td>
+    <span className="text-slate-500">
+      {c.trainingGroups.length ? c.trainingGroups.map((g) => (g === 1 ? "พุธ" : "จันทร์")).join(" / ") : "-"}
+    </span>
+  );
+}
+function GroupSelect({ c, set, full }: { c: CandidateDTO; set: EditProps["set"]; full?: boolean }) {
+  return (
+    <Select
+      value={c.finalGroup ? String(c.finalGroup) : ""}
+      onChange={(v) => set(c.id, { finalGroup: v ? Number(v) : null })}
+      placeholder="— เลือกกลุ่ม —"
+      options={[["1", "กลุ่ม 1 (พุธ)"], ["2", "กลุ่ม 2 (จันทร์)"]]}
+      muteEmpty
+      full={full}
+    />
+  );
+}
+function DateInput({ c, set, full }: { c: CandidateDTO; set: EditProps["set"]; full?: boolean }) {
+  return (
+    <div className={`flex items-center gap-1 ${full ? "w-full" : ""}`}>
+      <input
+        type="date"
+        value={c.consultDate ?? ""}
+        onChange={(e) => set(c.id, { consultDate: e.target.value || null })}
+        className={`h-9 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-blue-500 ${full ? "w-full" : ""}`}
+      />
+      {c.consultDate && (
+        <button
+          type="button"
+          onClick={() => set(c.id, { consultDate: null })}
+          title="ลบวันนัด"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:border-rose-300 hover:text-rose-600"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
+}
+function CoachSelect({ c, set, full }: { c: CandidateDTO; set: EditProps["set"]; full?: boolean }) {
+  return (
+    <Select
+      value={c.visitCoach ?? ""}
+      onChange={(v) => set(c.id, { visitCoach: v || null })}
+      placeholder="— เลือกโค้ช —"
+      options={COACHES.map((co) => [co, co] as [string, string])}
+      muteEmpty
+      full={full}
+    />
+  );
+}
+function LocationInput({ c, set, addrOf, full }: { c: CandidateDTO; set: EditProps["set"]; addrOf: EditProps["addrOf"]; full?: boolean }) {
+  return (
+    <input
+      type="text"
+      defaultValue={c.visitLocation ?? ""}
+      onBlur={(e) => {
+        const v = e.target.value.trim() || null;
+        if (v !== (c.visitLocation ?? null)) set(c.id, { visitLocation: v });
+      }}
+      placeholder={addrOf(c) ? "ว่าง = ใช้ที่อยู่บริษัท" : "ระบุสถานที่นัด"}
+      className={`h-9 rounded-lg border border-slate-300 px-2 text-sm outline-none focus:border-blue-500 ${full ? "w-full" : "w-56"}`}
+    />
+  );
+}
+
+function PersonHead({ c, addrOf, emailOf }: { c: CandidateDTO; addrOf: EditProps["addrOf"]; emailOf: EditProps["emailOf"] }) {
+  return (
+    <>
+      <div className="font-medium text-slate-800">{c.name}</div>
+      <div className="text-sm text-slate-400">{c.company ?? "-"}</div>
+      {c.phone && <div className="text-xs text-slate-400">{phone66(c.phone)}</div>}
+      {emailOf(c) && <div className="text-xs text-slate-400">{emailOf(c)}</div>}
+      {addrOf(c) && (
+        <div className="mt-0.5 flex items-start gap-1 text-xs text-slate-400">
+          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {addrOf(c)}
+        </div>
+      )}
+    </>
+  );
+}
+
+function EditTable({ people, set, addrOf, emailOf }: EditProps) {
+  if (people.length === 0)
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white px-3 py-12 text-center text-slate-400">
+        ยังไม่มีผู้ผ่านรอบ Final — ไปเลือกผู้เข้าร่วมในหน้าสัมภาษณ์ก่อน
+      </div>
+    );
+  return (
+    <>
+      {/* ตาราง — tablet ขึ้นไป (≥768px) ; มือถือใช้การ์ด */}
+      <div className={`hidden md:block ${TABLE.wrap}`}>
+        <table className={`min-w-[1050px] ${TABLE.table}`}>
+          <thead className={TABLE.thead}>
+            <tr className={TABLE.theadRow}>
+              <th className="px-3 py-2.5">ชื่อ / กิจการ / ที่อยู่</th>
+              <th className="px-3 py-2.5">สะดวกกลุ่ม</th>
+              <th className="px-3 py-2.5">กลุ่มเรียนจริง</th>
+              <th className="px-3 py-2.5">วันนัด 1st visit</th>
+              <th className="px-3 py-2.5">โค้ชที่ไป</th>
+              <th className="px-3 py-2.5">สถานที่นัด</th>
             </tr>
-          ))}
-          {people.length === 0 && (
-            <tr><td colSpan={7} className="px-3 py-12 text-center text-slate-400">ยังไม่มีผู้ผ่านรอบ Final — ไปเลือกผู้เข้าร่วมในหน้าสัมภาษณ์ก่อน</td></tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {people.map((c) => (
+              <tr key={c.id} className={TABLE.row}>
+                <td className="px-3 py-2.5"><PersonHead c={c} addrOf={addrOf} emailOf={emailOf} /></td>
+                <td className="px-3 py-2.5 text-xs"><ConvenientGroups c={c} /></td>
+                <td className="px-3 py-2.5"><GroupSelect c={c} set={set} /></td>
+                <td className="px-3 py-2.5"><DateInput c={c} set={set} /></td>
+                <td className="px-3 py-2.5"><CoachSelect c={c} set={set} /></td>
+                <td className="px-3 py-2.5"><LocationInput c={c} set={set} addrOf={addrOf} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* การ์ด — มือถือเท่านั้น (<768px) */}
+      <div className="space-y-3 md:hidden">
+        {people.map((c) => (
+          <div key={c.id} className="rounded-xl border border-slate-200 bg-white p-3">
+            <div className="border-b border-slate-100 pb-2">
+              <PersonHead c={c} addrOf={addrOf} emailOf={emailOf} />
+              <div className="mt-1 text-xs text-slate-400">สะดวกกลุ่ม: <ConvenientGroups c={c} /></div>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+              <Field label="กลุ่มเรียนจริง"><GroupSelect c={c} set={set} full /></Field>
+              <Field label="วันนัด 1st visit"><DateInput c={c} set={set} full /></Field>
+              <Field label="โค้ชที่ไป"><CoachSelect c={c} set={set} full /></Field>
+              <Field label="สถานที่นัด" wide><LocationInput c={c} set={set} addrOf={addrOf} full /></Field>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
+  return (
+    <div className={wide ? "col-span-2" : ""}>
+      <div className="mb-0.5 text-xs font-medium text-slate-500">{label}</div>
+      {children}
     </div>
   );
 }

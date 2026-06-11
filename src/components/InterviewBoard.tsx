@@ -122,7 +122,7 @@ export default function InterviewBoard({
   return (
     <div className="min-h-screen">
       <header className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-        <div className="mx-auto max-w-[1500px] px-5 py-4">
+        <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="flex items-center gap-2 text-xl font-bold">
@@ -151,7 +151,7 @@ export default function InterviewBoard({
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1500px] px-5 py-4">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-5 py-4">
         <div className="grid grid-cols-3 gap-3">
           <Stat label="ผู้เข้าสัมภาษณ์" value={stats.total} tone="slate" />
           <Stat label="ประเมินครบ" value={`${stats.done}/${stats.total}`} tone="blue" />
@@ -162,7 +162,7 @@ export default function InterviewBoard({
         <TrainingSummary people={cands} />
       </div>
 
-      <div className="mx-auto max-w-[1500px] px-5 pb-4">
+      <div className="mx-auto max-w-[1500px] px-4 sm:px-5 pb-4">
 
         {/* ตาราง — จอใหญ่ */}
         <div className={`mt-4 ${TABLE.tableWrapDesktop} ${TABLE.wrap}`}>
