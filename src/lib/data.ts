@@ -254,3 +254,36 @@ export async function getVisitList(): Promise<VisitItem[]> {
     };
   });
 }
+
+/** ดึงกิจการเดียวตาม candidateId (สำหรับหน้าฟอร์มแยก /visit/[id]) */
+export async function getVisitItem(candidateId: string): Promise<VisitItem | null> {
+  const c = await prisma.candidate.findFirst({
+    where: { id: candidateId, round2Result: "PASS" },
+    include: { interviewSlot: true, visitReport: true },
+  });
+  if (!c) return null;
+
+  const l = c.phone
+    ? await prisma.lead.findFirst({ where: { phoneNorm: c.phone } })
+    : null;
+  const lead: VisitLeadInfo | null = l
+    ? {
+        contactName: [l.prefix, l.firstName, l.lastName].filter(Boolean).join(" ") || null,
+        email: l.email,
+        registrationNo: l.registrationNo,
+        companyAddress: l.companyAddress,
+        businessType: l.businessType,
+        mainProduct: l.mainProduct,
+        revenue: l.revenue,
+        yearsOperating: l.yearsOperating,
+        facebookUrl: l.facebookUrl,
+        website: l.website,
+      }
+    : null;
+
+  return {
+    candidate: toCandidateDTO(c),
+    lead,
+    report: c.visitReport ? toVisitReportDTO(c.visitReport) : null,
+  };
+}
