@@ -59,7 +59,7 @@ export function defaultWebComponents(): WebComponentRow[] {
 }
 
 // ---------- คำนวณ % ความครบของฟอร์ม (ใช้แสดงในรายการ) ----------
-// 12 ช่องสำคัญที่ถือว่า "กรอกแล้ว" — ใช้คิดเปอร์เซ็นต์คร่าวๆ
+// 11 ช่องสำคัญที่ถือว่า "กรอกแล้ว" — ใช้คิดเปอร์เซ็นต์คร่าวๆ
 export type VisitReportLike = {
   history?: string | null;
   swotStrength?: string | null;
@@ -71,7 +71,6 @@ export type VisitReportLike = {
   approach?: string | null;
   domainWanted?: string | null;
   channelAnalysis?: ChannelRow[];
-  mandayPlan?: MandayRow[];
   websiteComponents?: WebComponentRow[];
 } | null | undefined;
 
@@ -89,7 +88,6 @@ export function visitProgress(r: VisitReportLike): number {
     filled(r.approach),
     filled(r.domainWanted),
     !!r.channelAnalysis?.some((c) => c.status !== "ไม่มี" || filled(c.recommend)),
-    !!r.mandayPlan?.some((m) => m.planned),
     !!r.websiteComponents?.some((w) => w.suitable),
   ];
   const done = checks.filter(Boolean).length;

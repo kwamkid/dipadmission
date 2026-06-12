@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, ClipboardCheck, FileText, Check, Pencil, Phone, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, X } from "lucide-react";
+import { Building2, ClipboardCheck, FileText, Check, Pencil, Phone, CalendarDays, ArrowUpDown, ArrowUp, ArrowDown, X, ExternalLink } from "lucide-react";
 import type { VisitItem, VisitReportDTO, CandidateDTO } from "@/lib/types";
 import { TRAINING_GROUPS } from "@/lib/slots";
 import { phone66 } from "@/lib/format";
@@ -10,7 +10,6 @@ import { visitProgress } from "@/lib/visit";
 import { TABLE } from "@/lib/ui";
 import { saveFinal } from "@/app/actions";
 import TabNav from "./TabNav";
-import VisitPanel from "./VisitPanel";
 
 const GROUP_COLOR: Record<number, string> = {
   1: "bg-indigo-100 text-indigo-700",
@@ -20,9 +19,6 @@ const GROUP_COLOR: Record<number, string> = {
 export default function VisitBoard({ items }: { items: VisitItem[] }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // overlay เก็บค่าที่เพิ่งแก้ (optimistic) ทับ report ของ candidate นั้น
-  const [over, setOver] = useState<Record<string, Partial<VisitReportDTO>>>({});
   // overlay สำหรับ field บน Candidate (เช่น i-industry) ที่แก้จากหน้านี้
   const [candOver, setCandOver] = useState<Record<string, Partial<CandidateDTO>>>({});
   // เรียงตามวันนัด visit — default = เร็ว→ช้า ; "desc" = ช้า→เร็ว ; null = ตามเดิม (กลุ่ม/ชื่อ)
@@ -31,7 +27,6 @@ export default function VisitBoard({ items }: { items: VisitItem[] }) {
   const rows = useMemo(() => {
     const mapped = items.map((it) => {
       let out = it;
-      if (over[it.candidate.id]) out = { ...out, report: { ...(out.report ?? ({} as VisitReportDTO)), ...over[it.candidate.id] } };
       if (candOver[it.candidate.id]) out = { ...out, candidate: { ...out.candidate, ...candOver[it.candidate.id] } };
       return out;
     });
@@ -44,7 +39,7 @@ export default function VisitBoard({ items }: { items: VisitItem[] }) {
       if (!db) return -1;
       return dateSort === "asc" ? da.localeCompare(db) : db.localeCompare(da);
     });
-  }, [items, over, candOver, dateSort]);
+  }, [items, candOver, dateSort]);
 
   // อัปเดต field บน Candidate (i-industry / วันนัด visit) → เขียนกลับผ่าน saveFinal
   function setCandidate(id: string, data: Partial<CandidateDTO>, prev: Partial<CandidateDTO>) {
@@ -69,16 +64,6 @@ export default function VisitBoard({ items }: { items: VisitItem[] }) {
     const ind = rows.filter((r) => r.candidate.iindustryReg).length;
     return { total: rows.length, done, mou, ind };
   }, [rows]);
-
-  const selectedIndex = rows.findIndex((r) => r.candidate.id === selectedId);
-  const selected = selectedIndex >= 0 ? rows[selectedIndex] : null;
-
-  function refresh() {
-    startTransition(() => router.refresh());
-  }
-  function applyOverlay(id: string, data: Partial<VisitReportDTO>) {
-    setOver((o) => ({ ...o, [id]: { ...o[id], ...data } }));
-  }
 
   return (
     <div className="min-h-screen">
@@ -132,7 +117,7 @@ export default function VisitBoard({ items }: { items: VisitItem[] }) {
             </thead>
             <tbody>
               {rows.map((it) => (
-                <VisitRow key={it.candidate.id} it={it} onOpen={() => setSelectedId(it.candidate.id)} onIndustry={setIndustry} onDate={setVisitDate} />
+                <VisitRow key={it.candidate.id} it={it} onIndustry={setIndustry} onDate={setVisitDate} />
               ))}
               {rows.length === 0 && (
                 <tr>
@@ -148,22 +133,10 @@ export default function VisitBoard({ items }: { items: VisitItem[] }) {
         {/* การ์ด — มือถือเท่านั้น (<768px) */}
         <div className="mt-4 space-y-2 md:hidden">
           {rows.map((it) => (
-            <VisitCard key={it.candidate.id} it={it} onOpen={() => setSelectedId(it.candidate.id)} onIndustry={setIndustry} onDate={setVisitDate} />
+            <VisitCard key={it.candidate.id} it={it} onIndustry={setIndustry} onDate={setVisitDate} />
           ))}
         </div>
       </div>
-
-      {selected && (
-        <VisitPanel
-          item={selected}
-          position={{ index: selectedIndex, total: rows.length }}
-          onClose={() => setSelectedId(null)}
-          onPrev={selectedIndex > 0 ? () => setSelectedId(rows[selectedIndex - 1].candidate.id) : undefined}
-          onNext={selectedIndex < rows.length - 1 ? () => setSelectedId(rows[selectedIndex + 1].candidate.id) : undefined}
-          onChanged={refresh}
-          onOptimistic={applyOverlay}
-        />
-      )}
     </div>
   );
 }
@@ -199,15 +172,20 @@ function ProgressBar({ pct }: { pct: number }) {
   );
 }
 
-function OpenButton({ started }: { started: boolean }) {
+// ลิงก์เปิดหน้าฟอร์มแยกใน tab ใหม่
+function OpenLink({ id, started, full }: { id: string; started: boolean; full?: boolean }) {
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${
-        started ? "border border-blue-300 text-blue-700" : "bg-blue-600 text-white"
+    <a
+      href={`/visit/${id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`inline-flex items-center justify-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium ${full ? "w-full py-2" : ""} ${
+        started ? "border border-blue-300 text-blue-700 hover:bg-blue-50" : "bg-blue-600 text-white hover:bg-blue-700"
       }`}
     >
       {started ? <><Pencil className="h-3 w-3" /> แก้ข้อมูล</> : <><FileText className="h-3.5 w-3.5" /> กรอกข้อมูล</>}
-    </span>
+      <ExternalLink className="h-3 w-3 opacity-70" />
+    </a>
   );
 }
 
@@ -250,20 +228,19 @@ function DateCell({ value, onChange, full }: { value: string | null; onChange: (
 
 type RowProps = {
   it: VisitItem;
-  onOpen: () => void;
   onIndustry: (id: string, value: boolean) => void;
   onDate: (id: string, date: string | null, prevDate: string | null) => void;
 };
 
-function VisitRow({ it, onOpen, onIndustry, onDate }: RowProps) {
+function VisitRow({ it, onIndustry, onDate }: RowProps) {
   const { candidate: c, report } = it;
   const pct = visitProgress(report);
   return (
     <tr className={`border-b border-slate-100 transition hover:brightness-95 ${report?.status === "DONE" ? "bg-emerald-50/60" : ""}`}>
       <td className="px-3 py-2.5">
-        <button onClick={onOpen} className="text-left font-medium text-blue-700 hover:underline">
+        <a href={`/visit/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-left font-medium text-blue-700 hover:underline">
           {c.company || c.name}
-        </button>
+        </a>
         <div className="text-xs text-slate-400">{c.name}</div>
         {c.phone && (
           <a href={`tel:${c.phone}`} className="mt-0.5 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-green-700">
@@ -278,22 +255,22 @@ function VisitRow({ it, onOpen, onIndustry, onDate }: RowProps) {
       <td className="px-3 py-2.5"><ProgressBar pct={pct} /></td>
       <td className="px-3 py-2.5"><StatusBadge status={report?.status} /></td>
       <td className="px-3 py-2.5">
-        <button onClick={onOpen}><OpenButton started={pct > 0} /></button>
+        <OpenLink id={c.id} started={pct > 0} />
       </td>
     </tr>
   );
 }
 
-function VisitCard({ it, onOpen, onIndustry, onDate }: RowProps) {
+function VisitCard({ it, onIndustry, onDate }: RowProps) {
   const { candidate: c, report } = it;
   const pct = visitProgress(report);
   return (
     <div className={`rounded-xl border border-slate-200 p-3 ${report?.status === "DONE" ? "bg-emerald-50/60" : ""}`}>
       <div className="flex items-start justify-between gap-2">
-        <button onClick={onOpen} className="text-left">
+        <a href={`/visit/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-left">
           <div className="font-semibold text-blue-700">{c.company || c.name}</div>
           <div className="text-xs text-slate-500">{c.name}</div>
-        </button>
+        </a>
         <StatusBadge status={report?.status} />
       </div>
       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -311,8 +288,8 @@ function VisitCard({ it, onOpen, onIndustry, onDate }: RowProps) {
         </div>
         <ProgressBar pct={pct} />
       </div>
-      <div className="mt-2 flex justify-end">
-        <button onClick={onOpen}><OpenButton started={pct > 0} /></button>
+      <div className="mt-2">
+        <OpenLink id={c.id} started={pct > 0} full />
       </div>
     </div>
   );
